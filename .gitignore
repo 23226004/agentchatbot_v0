@@ -1,0 +1,34 @@
+# ── 비밀/환경변수 (절대 커밋 금지) ──
+.env
+.env.*
+!.env.example
+**/.env
+!**/.env.example
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# ── 가상환경 (uv) ──
+.venv/
+venv/
+uv.lock
+
+# ── 테스트/캐시 ──
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── OS / 에디터 ──
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# ── 로그 ──
+*.log
