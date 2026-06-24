@@ -1,0 +1,30 @@
+# db-layer 인프라 (Design v0.3.1 §12.2 슬라이스2)
+# 로컬 Docker: Qdrant(vector) + Fuseki(RDF/SPARQL).
+# 임베딩(BGE-m3 dense)·LLM은 원격(Tailscale)이라 컨테이너 아님 → deploy/.env 참고.
+# reranker·FlagEmbedding(sparse)는 v1 이후 enhancement.
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: dblayer-qdrant
+    ports:
+      - "6333:6333"   # REST/HTTP
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+  fuseki:
+    image: stain/jena-fuseki:latest
+    container_name: dblayer-fuseki
+    ports:
+      - "3030:3030"
+    environment:
+      - ADMIN_PASSWORD=${FUSEKI_ADMIN_PASSWORD:-admin123}
+    volumes:
+      - fuseki_data:/fuseki
+    restart: unless-stopped
+
+volumes:
+  qdrant_data:
+  fuseki_data:

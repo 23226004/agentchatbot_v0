@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "db_admin"
+version = "0.1.0"
+description = "법령 데이터 인제스천/관리 — law.go.kr 본문수집·RDF화·임베딩 적재. legal_core/legal_infra 의존."
+requires-python = ">=3.12"
+dependencies = ["requests>=2.31", "rdflib>=7.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["db_admin*"]

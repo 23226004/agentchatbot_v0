@@ -24,6 +24,9 @@ uv.lock
 .mypy_cache/
 .ruff_cache/
 
+# ── 에이전트 로컬 상태 (자동 생성) ──
+.claude/
+
 # ── OS / 에디터 ──
 .DS_Store
 .idea/

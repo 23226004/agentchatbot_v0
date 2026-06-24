@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "legal_infra"
+version = "0.1.0"
+description = "legal_core Protocol 구현 — Qdrant·Fuseki·원격 임베딩 클라이언트. 클라이언트 의존을 여기 격리."
+requires-python = ">=3.12"
+dependencies = [
+    "qdrant-client>=1.12",
+    "rdflib>=7.0",
+    "requests>=2.31",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["legal_infra*"]

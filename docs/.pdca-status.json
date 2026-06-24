@@ -1,15 +1,88 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-06-24T02:13:50.484Z",
+  "lastUpdated": "2026-06-24T13:23:01.356Z",
   "activeFeatures": [
-    "tools",
+    "db-layer",
+    "conversation-store",
+    "legal_core",
+    "tests",
+    "legal_infra",
     "scratchpad",
+    "db_admin",
+    "pipeline",
+    "retrieval.py",
     "core",
-    "agent",
-    "prompts"
+    "scripts",
+    "2026_06_20_Agent"
   ],
-  "primaryFeature": "tools",
+  "primaryFeature": "db-layer",
   "features": {
+    "conversation-store": {
+      "phase": "plan",
+      "phaseNumber": 1,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [
+        "FR-01",
+        "FR-02",
+        "FR-03",
+        "FR-04",
+        "FR-05",
+        "FR-06",
+        "FR-07",
+        "FR-08",
+        "FR-09",
+        "FR-10",
+        "FR-11"
+      ],
+      "scope": {
+        "store": "postgresql",
+        "longTermMemory": "deferred",
+        "checkpointer": "PostgresSaver"
+      },
+      "documents": {
+        "plan": "docs/01-plan/features/conversation-store.plan.md"
+      },
+      "timestamps": {
+        "started": "2026-06-24T06:00:00.000Z",
+        "lastUpdated": "2026-06-24T06:00:00.000Z"
+      }
+    },
+    "db-layer": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": 90,
+      "iterationCount": 0,
+      "requirements": [
+        "FR-01",
+        "FR-02",
+        "FR-03",
+        "FR-04",
+        "FR-05",
+        "FR-06",
+        "FR-07",
+        "FR-08",
+        "FR-09",
+        "FR-10",
+        "FR-11",
+        "FR-12"
+      ],
+      "scope": {
+        "caseLaw": "deferred-2nd",
+        "chunkUnit": "article"
+      },
+      "documents": {
+        "plan": "docs/01-plan/features/db-layer.plan.md",
+        "corpusAnalysis": "docs/02-design/features/db-layer.corpus-analysis.md",
+        "design": "docs/02-design/features/db-layer.design.md",
+        "analysis": "docs/03-analysis/db-layer.analysis.md",
+        "report": "docs/04-report/features/db-layer.report.md"
+      },
+      "timestamps": {
+        "started": "2026-06-24T02:30:00.000Z",
+        "lastUpdated": "2026-06-24T18:00:00.000Z"
+      }
+    },
     "tools": {
       "phase": "do",
       "phaseNumber": 3,
@@ -32,9 +105,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-24T01:45:17.837Z",
-        "lastUpdated": "2026-06-24T01:50:59.236Z"
+        "lastUpdated": "2026-06-24T12:59:33.189Z"
       },
-      "lastFile": "/private/tmp/claude-501/-Users-sungjoonyi-Claude-Projects-2026-06-20-Agent/27c48f5e-1bae-4ad4-8c57-6248d0f1c02b/scratchpad/probe_ctx.py"
+      "lastFile": "/private/tmp/claude-501/-Users-sungjoonyi-Claude-Projects-2026-06-20-Agent/27c48f5e-1bae-4ad4-8c57-6248d0f1c02b/scratchpad/t_s7_live.py"
     },
     "core": {
       "phase": "do",
@@ -45,9 +118,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-24T02:04:19.153Z",
-        "lastUpdated": "2026-06-24T02:05:28.857Z"
+        "lastUpdated": "2026-06-24T11:53:57.806Z"
       },
-      "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/agent/src/core/llm.py"
+      "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/backend/src/backend_app/core/container.py"
     },
     "agent": {
       "phase": "do",
@@ -74,19 +147,273 @@
         "lastUpdated": "2026-06-24T02:13:50.484Z"
       },
       "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/agent/src/prompts/system.py"
+    },
+    "legal_core": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-24T08:20:43.807Z",
+        "lastUpdated": "2026-06-24T13:02:59.599Z"
+      },
+      "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/legal_core/src/legal_core/lawgo.py"
+    },
+    "tests": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-24T08:28:14.397Z",
+        "lastUpdated": "2026-06-24T13:23:01.356Z"
+      },
+      "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/legal_infra/tests/test_integration.py"
+    },
+    "legal_infra": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-24T08:54:27.427Z",
+        "lastUpdated": "2026-06-24T13:20:59.672Z"
+      },
+      "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/legal_infra/src/legal_infra/graph_fuseki.py"
+    },
+    "db_admin": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-24T10:03:25.573Z",
+        "lastUpdated": "2026-06-24T12:40:16.614Z"
+      },
+      "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/db-admin/src/db_admin/lawgo_client.py"
+    },
+    "pipeline": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-24T10:04:01.246Z",
+        "lastUpdated": "2026-06-24T12:03:10.437Z"
+      },
+      "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/db-admin/src/db_admin/pipeline/lawgo_ingest.py"
+    },
+    "retrieval.py": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-24T10:14:07.679Z",
+        "lastUpdated": "2026-06-24T12:41:37.789Z"
+      },
+      "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/backend/src/backend_app/services/retrieval.py"
+    },
+    "scripts": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-24T11:19:52.352Z",
+        "lastUpdated": "2026-06-24T12:05:25.167Z"
+      },
+      "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/backend/scripts/e2e_geosil.py"
+    },
+    "2026_06_20_Agent": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-06-24T11:32:52.062Z",
+        "lastUpdated": "2026-06-24T11:32:52.062Z"
+      },
+      "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/conftest.py"
     }
   },
   "pipeline": {
     "currentPhase": 1,
-    "level": "Dynamic",
+    "level": "Enterprise",
     "phaseHistory": []
   },
   "session": {
     "startedAt": "2026-06-24T01:28:19.047Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-06-24T02:13:50.484Z"
+    "lastActivity": "2026-06-24T13:23:01.356Z"
   },
   "history": [
+    {
+      "timestamp": "2026-06-24T18:00:00.000Z",
+      "feature": "db-layer",
+      "phase": "do",
+      "action": "다른관점 교차검증(보안·SRE·법률도메인): v1=검증슬라이스≠production≠법률안전 재프레이밍. 수정: delegatesTo 양방향(하위 위임법령 조회). 실버그 문서화: 재적재 stale(is_current supersede 슬라이스6 전 필수). 게이트 열거: 면책강제·cite위조검증·복원력·관측성·Qdrant인증·https. 57테스트"
+    },
+    {
+      "timestamp": "2026-06-24T17:00:00.000Z",
+      "feature": "db-layer",
+      "phase": "do",
+      "action": "슬라이스7 교차검증(2관점): Critical 커버리지 갭 발견(parse_hierarchy 이름prefix가 건축법 위임 75% 누락)→구조기반으로 수정(2→8엣지). build_delegation 테스트·Design 본문 lsStmd 갱신·§5 정정. 57통과. FR-03 child현행검증은 minor 백로그"
+    },
+    {
+      "timestamp": "2026-06-24T16:00:00.000Z",
+      "feature": "db-layer",
+      "phase": "do",
+      "action": "슬라이스7 완료: 위임그래프 delegatesTo(FR-02) — 소스 lsStmd(AI-Hub 건축법 미커버라 피벗), parse_hierarchy(직계 시행령/규칙), expand는 resource_id로 법령IRI. E2E: 시행령→delegatesTo→건축법 관계확장 출현. 55테스트. 슬라이스8(RunService+agent refactor+conversation-store)은 별 사이클"
+    },
+    {
+      "timestamp": "2026-06-24T15:00:00.000Z",
+      "feature": "db-layer",
+      "phase": "completed",
+      "action": "v1 완료 보고서 생성(report-generator). PDCA 1사이클 매듭: Plan v0.3→Design v0.3.1→Do 슬라이스1~6+하이브리드/reranker→Check 5라운드 교차검증→정직 ~90%. docs/04-report/features/db-layer.report.md"
+    },
+    {
+      "timestamp": "2026-06-24T14:30:00.000Z",
+      "feature": "db-layer",
+      "phase": "check",
+      "action": "v4 3관점 재검+정정(v5): 하이브리드 recall향상 실측확인·기능 견고, 하이브리드 경로 테스트 추가(54통과). 정직정정: ~95%→~90%(Recall NFR 미측정·골든셋 미구현 DoD미충족, 인프로세스 임베딩=self-host 서버 설계 이탈 등재, reranker=정확도필수). production 게이트 명시"
+    },
+    {
+      "timestamp": "2026-06-24T13:30:00.000Z",
+      "feature": "db-layer",
+      "phase": "check",
+      "action": "v4 Act: 하이브리드(FlagEmbedding dense+sparse RRF)+reranker(transformers cross-encoder) 구현. 발견·수정: 하이브리드 정의형질의 악화→reranker교정, rerank-before-dedup(본문손실), article_text(답변용 전체본문). E2E PASS·47테스트. FR-04/05 완성→일치율 ~95%"
+    },
+    {
+      "timestamp": "2026-06-24T12:30:00.000Z",
+      "feature": "db-layer",
+      "phase": "check",
+      "action": "v3 Act 재검증(3관점 재가동): 두 Major 실행증거로 봉인 확인. 라이브 integration+embedding+parse 테스트 추가(46 통과), src-layout 재현러너, 분석서 정직정정(일치율 85%·E2E 인용주체=슬라이스8 미검증·테스트수 46). Check 통과(정직 ~85%)"
+    },
+    {
+      "timestamp": "2026-06-24T11:40:00.000Z",
+      "feature": "db-layer",
+      "phase": "check",
+      "action": "3관점 교차검증으로 gap-detector 95% 정정(부풀림 발견). Act: 테스트 17→38 레포영속·ingest_cli/e2e 스크립트 승격·실버그2 수정(#3 인젝션 ValueError계약·#4 as-of NotImplementedError)·FR-03 후속재분류·dense축소/D-2 게이트 명시. 정정 일치율 ~88% Check통과(조건해소)"
+    },
+    {
+      "timestamp": "2026-06-24T11:00:00.000Z",
+      "feature": "db-layer",
+      "phase": "check",
+      "action": "Gap 분석(gap-detector): 1차 슬라이스 일치율 ~95% Check 통과, 순수누락 0. 이탈 LOW 3(D-1 legal_infra분리=개선 도식정정, D-2 select named-graph 백로그, D-3 URL). docs/03-analysis 기록"
+    },
+    {
+      "timestamp": "2026-06-24T10:30:00.000Z",
+      "feature": "db-layer",
+      "phase": "do",
+      "action": "슬라이스5/6 완료: backend_app RetrievalService(dedup·reranker선택) + E2E. '거실 정의'→제2조(0.593)→GPT 인용답변 [[cite:34f2a543]] 검증. 전체 단위테스트 17/17. v1 수직슬라이스 end-to-end 완성"
+    },
+    {
+      "timestamp": "2026-06-24T10:10:00.000Z",
+      "feature": "db-layer",
+      "phase": "do",
+      "action": "슬라이스4 완료: db-admin lawgo_ingest 건축법 실적재(166조문→293청크 분할→824트리플). 임베딩 한계(512토큰/입력) 발견→MAX_CHARS 450 분할+글자예산 배치. Qdrant 293·Fuseki 166 hasArticle(가지조문 포함) 검증"
+    },
+    {
+      "timestamp": "2026-06-24T09:40:00.000Z",
+      "feature": "db-layer",
+      "phase": "do",
+      "action": "슬라이스3 완료: legal_infra(RemoteEmbedding·QdrantVector·FusekiGraph) 구현+라이브검증. 거실→제2조 0.752 1순위, delegatesTo expand 동작, 안전테스트 10/10. expand는 default+named graph UNION으로 수정"
+    },
+    {
+      "timestamp": "2026-06-24T09:00:00.000Z",
+      "feature": "db-layer",
+      "phase": "do",
+      "action": "슬라이스2 완료: deploy/docker-compose(Qdrant 1.18.2 + Fuseki) 로컬 기동, law TDB2 데이터셋 생성, SPARQL 읽기/쓰기·Qdrant API·원격 임베딩(8081 dense 1024) 검증. 임베딩=원격 dense-only, sparse/reranker 후속"
+    },
+    {
+      "timestamp": "2026-06-24T08:30:00.000Z",
+      "feature": "db-layer",
+      "phase": "do",
+      "action": "Do 착수 슬라이스1 완료: legal_core 독립패키지(schemas+repositories Protocol+ids) editable설치·단위테스트 5/5·R1(가지조문 유일성) 검증. agent 미변경(FR-12는 슬라이스8)"
+    },
+    {
+      "timestamp": "2026-06-24T02:30:00.000Z",
+      "feature": "db-layer",
+      "phase": "plan",
+      "action": "Plan 문서 작성, 스택 확정(Fuseki+Qdrant+BGE-m3+reranker)"
+    },
+    {
+      "timestamp": "2026-06-24T02:45:00.000Z",
+      "feature": "db-layer",
+      "phase": "plan",
+      "action": "Plan v0.2 — 교차검증 반영(데이터 이원화·의존방향 확정·RDF근거 정정·FE계약 정렬)"
+    },
+    {
+      "timestamp": "2026-06-24T04:05:00.000Z",
+      "feature": "db-layer",
+      "phase": "design",
+      "action": "코퍼스 분석(484만 트리플) + Design 문서 작성(법령만·조단위·repositories Protocol)"
+    },
+    {
+      "timestamp": "2026-06-24T04:15:00.000Z",
+      "feature": "db-layer",
+      "phase": "design",
+      "action": "design-validator 검증(72/100, Critical 3) → Design v0.2 개정(C-1~3·M-1~5 해소)"
+    },
+    {
+      "timestamp": "2026-06-24T04:20:00.000Z",
+      "feature": "db-layer",
+      "phase": "design",
+      "action": "재검증 91/100 Do 승인. R-2 문서수정·R-1 슬라이스6 TODO 반영"
+    },
+    {
+      "timestamp": "2026-06-24T05:00:00.000Z",
+      "feature": "db-layer",
+      "phase": "design",
+      "action": "3관점 독립 교차검증(데이터/기술/구조)에서 Critical 발견 — bkit validator가 못 잡음. citations=조문→판례(오류 정정), AI-Hub 본문결함, TEI sparse 불가, 패키지 충돌"
+    },
+    {
+      "timestamp": "2026-06-24T05:10:00.000Z",
+      "feature": "db-layer",
+      "phase": "design",
+      "action": "조인 정합성 실측(법령명→유일ID 모호0) → Plan v0.3(본문=law.go.kr API·관계=검증된 AI-Hub·조인게이트·FlagEmbedding·패키지분리)"
+    },
+    {
+      "timestamp": "2026-06-24T05:25:00.000Z",
+      "feature": "db-layer",
+      "phase": "design",
+      "action": "Design v0.3 작성(canonical IRI·RunService·역할경계·legal_core·조인게이트 ingestion)"
+    },
+    {
+      "timestamp": "2026-06-24T05:45:00.000Z",
+      "feature": "db-layer",
+      "phase": "design",
+      "action": "3관점 v0.3 재검증 완료: 슬라이스1~6 blocker 없음. R1(가지조문URI)·§9.3(.n3())·위임커버리지(~444) 등 v0.3.1 패치. 거실정의 API 실회수·모호0(80표본) 입증. Design Do-ready"
+    },
+    {
+      "timestamp": "2026-06-24T06:00:00.000Z",
+      "feature": "conversation-store",
+      "phase": "plan",
+      "action": "채팅 보관 별도 피처 Plan 작성. 3계층(checkpoint/transcript/semantic)·PostgreSQL·PostgresSaver·citation 불변스냅샷·장기기억 연기. RunService(db-layer 슬라이스8)와 정렬"
+    },
+    {
+      "timestamp": "2026-06-24T06:20:00.000Z",
+      "feature": "conversation-store",
+      "phase": "plan",
+      "action": "2관점 교차검증(데이터모델·계약/통합): blocker 없음 Design 진입가능. Plan v0.2로 D-1~8 게이트 반영(분기=thread레벨·seq 단일writer·citation 동결시점·승인상태·PostgresSaver운영). seq/승인은 db-layer §6.2 양방향 동기화 필요(플래그)"
+    },
     {
       "timestamp": "2026-06-24T01:43:29.169Z",
       "feature": "tools",
@@ -138,6 +465,570 @@
     {
       "timestamp": "2026-06-24T02:13:50.484Z",
       "feature": "prompts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T04:01:24.465Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T04:02:06.557Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T04:54:56.974Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T04:55:05.473Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T04:55:51.380Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T08:20:43.807Z",
+      "feature": "legal_core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T08:21:30.096Z",
+      "feature": "legal_core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T08:21:46.299Z",
+      "feature": "legal_core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T08:22:18.563Z",
+      "feature": "legal_core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T08:28:14.397Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T08:54:27.427Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T08:54:48.751Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T08:55:05.596Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T08:55:31.871Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T08:55:45.851Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T09:57:22.622Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T09:57:57.177Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T09:58:31.351Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:02:36.293Z",
+      "feature": "legal_core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:03:25.573Z",
+      "feature": "db_admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:03:36.570Z",
+      "feature": "db_admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:04:01.246Z",
+      "feature": "pipeline",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:04:28.978Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:06:25.675Z",
+      "feature": "legal_core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:06:40.142Z",
+      "feature": "legal_core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:06:50.765Z",
+      "feature": "legal_core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:07:20.478Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:07:40.400Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:07:49.829Z",
+      "feature": "pipeline",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:07:55.342Z",
+      "feature": "pipeline",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:08:35.566Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:10:06.097Z",
+      "feature": "legal_core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:14:07.679Z",
+      "feature": "retrieval.py",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:14:21.342Z",
+      "feature": "core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:14:56.143Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T10:15:49.055Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:09:52.920Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:10:14.775Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:10:44.458Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:11:48.787Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:17:55.642Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:18:02.192Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:18:06.957Z",
+      "feature": "retrieval.py",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:18:35.676Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:18:51.530Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:19:07.176Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:19:22.719Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:19:37.469Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:19:52.352Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:20:09.034Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:20:18.374Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:20:22.832Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:25:07.431Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:28:05.087Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:28:30.233Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:28:44.953Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:32:52.062Z",
+      "feature": "2026_06_20_Agent",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:34:06.725Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:45:59.687Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:46:36.101Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:51:37.370Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:52:54.520Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:53:57.806Z",
+      "feature": "core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:54:49.315Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:56:27.214Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:57:41.874Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T11:58:29.216Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:00:51.989Z",
+      "feature": "retrieval.py",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:01:08.544Z",
+      "feature": "retrieval.py",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:02:35.873Z",
+      "feature": "legal_core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:02:58.107Z",
+      "feature": "legal_core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:03:10.437Z",
+      "feature": "pipeline",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:03:50.710Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:04:02.094Z",
+      "feature": "retrieval.py",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:05:25.167Z",
+      "feature": "scripts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:07:13.912Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:12:32.479Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:21:14.269Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:22:24.095Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:22:40.114Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:40:05.057Z",
+      "feature": "legal_core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:40:16.614Z",
+      "feature": "db_admin",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:41:37.789Z",
+      "feature": "retrieval.py",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:42:07.532Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:44:10.576Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:44:18.034Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:49:59.062Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T12:59:33.189Z",
+      "feature": "scratchpad",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T13:02:59.599Z",
+      "feature": "legal_core",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T13:03:17.496Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T13:03:51.315Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T13:04:25.843Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T13:20:59.672Z",
+      "feature": "legal_infra",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-24T13:23:01.356Z",
+      "feature": "tests",
       "phase": "do",
       "action": "updated"
     }

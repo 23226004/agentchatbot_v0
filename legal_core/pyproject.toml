@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "legal_core"
+version = "0.1.0"
+description = "법령 GraphRAG 공유 코어 — schemas + repository 인터페이스 + ID 유틸. backend·agent·db-admin이 의존하는 최하위 레이어."
+requires-python = ">=3.12"
+dependencies = []   # 순수 코어: 외부 의존 없음 (구현체가 클라이언트 의존을 가짐)
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["legal_core*"]

@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "backend_app"
+version = "0.1.0"
+description = "법령 GraphRAG backend — api·services(RetrievalService/RunService)·core(DI). legal_core/legal_infra 의존."
+requires-python = ">=3.12"
+dependencies = ["requests>=2.31"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["backend_app*"]
