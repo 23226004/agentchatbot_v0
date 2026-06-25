@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-06-24T13:23:01.356Z",
+  "lastUpdated": "2026-06-25T00:00:00.000Z",
   "activeFeatures": [
     "db-layer",
     "conversation-store",
@@ -18,8 +18,8 @@
   "primaryFeature": "db-layer",
   "features": {
     "conversation-store": {
-      "phase": "plan",
-      "phaseNumber": 1,
+      "phase": "design",
+      "phaseNumber": 2,
       "matchRate": null,
       "iterationCount": 0,
       "requirements": [
@@ -41,12 +41,16 @@
         "checkpointer": "PostgresSaver"
       },
       "documents": {
-        "plan": "docs/01-plan/features/conversation-store.plan.md"
+        "plan": "docs/01-plan/features/conversation-store.plan.md",
+        "design": "docs/02-design/features/conversation-store.design.md"
       },
       "timestamps": {
         "started": "2026-06-24T06:00:00.000Z",
-        "lastUpdated": "2026-06-24T06:00:00.000Z"
-      }
+        "lastUpdated": "2026-06-25T11:00:00.000Z"
+      },
+      "designVersion": "0.3",
+      "designStatus": "Do-ready (2차 3관점 교차검증)",
+      "notes": []
     },
     "db-layer": {
       "phase": "do",
@@ -264,6 +268,18 @@
     "lastActivity": "2026-06-24T13:23:01.356Z"
   },
   "history": [
+    {
+      "timestamp": "2026-06-25T11:00:00.000Z",
+      "feature": "conversation-store",
+      "phase": "design",
+      "action": "Design 3관점 교차검증→v0.2. citation 정규화(전역+message_citations 조인, C1)·조문전문 동결(법적무결성, A)·fork 참조모델+재귀쿼리(C2)·seq 카운터+active-run index(M1)·reconcile backfill(M2)·RunService 권위 단일화(B)·답변계층 RunService 최종본문(C)·PostgresSaver 공존(T1)·interrupt 구체화(T2). db-layer §6.2/§6.3 양방향 정렬"
+    },
+    {
+      "timestamp": "2026-06-25T09:00:00.000Z",
+      "feature": "conversation-store",
+      "phase": "design",
+      "action": "Design 작성: PostgreSQL DDL(threads/messages 분기DAG/runs/citations 불변스냅샷/summaries/settings)·RunService(updates→SSE 8종+영속+seq 커밋후방출)·D-1~8 게이트 해소·v8 답변계층 게이트(cite위조검증·면책·버전고지). PostgresSaver DI. db-layer 슬라이스8 합류"
+    },
     {
       "timestamp": "2026-06-24T18:00:00.000Z",
       "feature": "db-layer",

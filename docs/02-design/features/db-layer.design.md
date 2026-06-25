@@ -186,23 +186,16 @@ class RetrievalService:                # GPT 호출하지 않음 — AnswerConte
 | snippet | text[:200] | |
 | url | law.go.kr 링크(법령ID/조문) | |
 
-### 6.2 RunService: agent updates → FE SSE (FR-08, 신규)
-agent는 `stream(stream_mode="updates")`로 노드 청크를 흘린다. RunService가 FE Plan §4.2 이벤트로 변환:
-| LangGraph updates | → FE SSE event | payload |
-|-------------------|----------------|---------|
-| 스트림 시작 | `run.started` | {run_id, thread_id} |
-| AIMessage.tool_calls | `tool.call` | {id, name, args} |
-| ToolMessage | `tool.result` | {id, content} |
-| **법령도구 ToolMessage(AnswerContext.articles)** | `citation.added`(중복제거) | LawRef→{id,kind,title,ref,snippet,url} |
-| 최종 AIMessage.content | `message.completed` | {text, content_type:"markdown", citations:[id]} |
-| 예외 / 종료 | `error` / `run.done` | |
-> **message.delta**: 현재 updates 모드라 **미지원** → `message.completed`로 시작(FE Plan §4.2 각주와 합의). 토큰 스트림은 `stream_mode="messages"` 도입 슬라이스로 분리.
-> **슬라이스8 게이트(C-1)**: ① `approval.requested{id,action,detail}` + FE `/approve`·`/interrupt` → **agent 그래프에 LangGraph `interrupt`/`Command(resume=)` 노드 도입**(현 `create_react_agent`엔 없음). ② 모든 이벤트에 단조 `seq` 부여(SSE 재연결 중복방지, FE §5.5/§11).
+### 6.2 RunService — **권위 명세는 conversation-store §5** (정렬, v7)
+> RunService(agent updates→FE SSE 8종 + transcript 영속 + **seq** + **approval** + 답변계층)의
+> **단일 권위 소스 = `conversation-store.design.md` §5**. 영속·seq·동시성이 transcript(conversation-store 소유)에 묶이므로 그쪽이 권위. 여기서는 **db-layer 측 입력**만 정의(아래), 이벤트 표·seq·approval은 §5 참조. (이전 "슬라이스8 게이트 C-1"의 seq/approval은 conversation-store §5에서 해소.)
 
-### 6.3 역할 경계 (이중경로 방지)
+**db-layer 측 입력**: 법령도구 → RetrievalService → `AnswerContext.articles`(LawRef[], `article_text` 포함). RunService(§5)가 이를 `content_and_artifact`의 artifact로 받아 `citation.added` 방출 + `citations`(전문 동결)/`message_citations` 영속.
+
+### 6.3 역할 경계 (conversation-store §5.1과 정렬, v7)
 - **검색·관계확장 = RetrievalService 단독** (반환 AnswerContext, GPT 미호출).
-- **GPT 인용답변 생성 = agent ReAct 단독.** 법령도구가 RetrievalService를 호출→AnswerContext를 도구결과로 반환→agent LLM이 본문에 **`[[cite:{LawRef.id}]]`** 주입(system prompt 규칙)하여 답변.
-- **SSE citation.added 방출 = RunService** (도구결과의 LawRef[]에서). 본문 토큰 id ≡ citations id ≡ point.id (1:1).
+- **GPT 답변 = 2단계**: agent ReAct = **초안 생성**(`[[cite:{LawRef.id}]]` 주입, system prompt 규칙), **RunService = 최종 본문 책임**(cite 위조검증·면책 부착·버전 고지 — conversation-store §5.1, Zero-Trust 서버측 강제). 즉 "생성=agent 단독"이 아니라 **초안=agent / 최종=RunService**.
+- **SSE citation.added 방출 = RunService** (artifact의 LawRef[]에서). 본문 토큰 id ≡ message_citations id ≡ point.id (1:1).
 - **도구 반환 계약(C-2, 슬라이스8 게이트)**: 법령도구는 LangChain `response_format="content_and_artifact"`로 **(LLM용 텍스트: 각 LawRef.id 라벨 포함, AnswerContext: 구조체)를 동시 반환**. LLM은 텍스트의 id로 `[[cite:{id}]]` 주입(system prompt 규칙 추가 필요 — 현 `prompts/system.py` 미구현), RunService는 artifact의 LawRef[]로 citation.added 방출.
 
 ---
