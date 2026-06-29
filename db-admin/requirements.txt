@@ -1,0 +1,10 @@
+# db-admin 설치 매니페스트 — `cd db-admin && uv pip install -r requirements.txt`.
+#
+# PyPI 의존(requests/rdflib)은 pyproject.toml [project.dependencies] → `-e .` 가 끌어옴.
+# 형제 패키지(PyPI 인덱스 부재, editable). db_admin 이 import:
+#   legal_core   — pipeline/{lawgo_ingest,delegation_build}.py 가 **eager**(ids/lawgo/schemas/text)
+#   legal_infra  — scripts/{ingest_cli,build_delegation_cli}.py 가 적재 시(Fuseki/Qdrant/임베딩)
+# ※ 적재 시 로컬 임베딩(LocalFlagEmbedding) 경로는 torch·FlagEmbedding 추가 필요(legal_infra 참조).
+-e ../legal_core
+-e ../legal_infra
+-e .

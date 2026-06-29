@@ -57,11 +57,43 @@ def test_rerank_before_dedup_keeps_right_window():
     assert "거실" in top.article_text and "방을 말한다" in top.article_text  # 답변용 전체 본문
 
 
+class FailGraph:
+    """expand 가 항상 예외(Fuseki/SPARQL 장애 모사)."""
+    def expand(self, uris, predicates, depth=1, limit=20):
+        raise RuntimeError("fuseki down")
+
+
+def test_graph_failure_falls_back_to_search_only():
+    """설계 §8: SPARQL/Fuseki 장애 시 관계확장만 생략·벡터 검색결과는 유지(가용성 0 방지)."""
+    svc = RetrievalService(FakeEmb(), FakeVecSubchunks(), FailGraph(), reranker=None)
+    ctx = svc.retrieve("x", k=2)
+    assert len(ctx.articles) == 2 and ctx.relations == []     # 검색은 살고 relations 만 빔
+
+
 def test_no_reranker_dedup_on_vector_score():
     svc = RetrievalService(FakeEmb(), FakeVecSubchunks(), FakeGraph(), reranker=None)
     ctx = svc.retrieve("x", k=2)
     # reranker 없으면 벡터점수 dedup: 제53조(0.95), 제2조(0.9)
     assert [a.ref for a in ctx.articles] == ["건축법 제53조", "건축법 제2조"]
+
+
+class FakeVecSubReversed:
+    """동일 조문 서브청크가 (낮은점수 먼저, 높은점수 나중) 순서.
+    dedup이 'first'가 아니라 'max-score'를 대표로 골라야 — 아니면 엉뚱한 윈도우가 대표.
+    """
+    def search(self, q, k, flt=None):
+        return [
+            Hit(uri=URI2, score=0.3, payload=_payload(URI2, "제2조", "낮은 윈도우", ART2_FULL)),
+            Hit(uri=URI2, score=0.9, payload=_payload(URI2, "제2조", "높은 윈도우", ART2_FULL)),
+        ]
+
+
+def test_dedup_keeps_max_score_not_first():
+    """입력 순서가 (저, 고)여도 조문 대표는 max-score 윈도우(=0.9)여야 한다(회귀 게이트)."""
+    svc = RetrievalService(FakeEmb(), FakeVecSubReversed(), FakeGraph(), reranker=None)
+    arts = svc.retrieve("x", k=1).articles
+    assert len(arts) == 1
+    assert arts[0].score == 0.9       # 'first'(0.3)면 dedup이 max를 안 고른 것
 
 
 def test_lawref_citation_id_is_article_seq0():

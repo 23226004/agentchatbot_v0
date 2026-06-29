@@ -1,0 +1,71 @@
+/* 디자인 토큰 — 범용 업무 에이전트(중립·신뢰 톤).
+   기본=라이트, 시스템 다크 자동, [data-theme] 수동 토글이 우선. 도메인 색은 활성 에이전트가 --accent override. */
+:root,
+:root[data-theme='light'] {
+  --bg: #ffffff;
+  --bg-soft: #f6f7f8;
+  --bg-inset: #eef0f2;
+  --text: #1a1c1e;
+  --text-soft: #5b6066;
+  --text-faint: #8b9098;
+  --border: #e3e6e9;
+  --border-strong: #cdd2d7;
+  --accent: #2f6db0;
+  --accent-soft: #e8f0f8;
+  --success: #1f7a4d;
+  --warning: #9a6a00;
+  --danger: #b3322b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181b;
+    --bg-soft: #1d2024;
+    --bg-inset: #23272c;
+    --text: #e8eaed;
+    --text-soft: #a7adb4;
+    --text-faint: #71777e;
+    --border: #2c3036;
+    --border-strong: #3a3f46;
+    --accent: #5a9fe0;
+    --accent-soft: #1b2a3a;
+    --success: #4caf7f;
+    --warning: #d6a430;
+    --danger: #e0635b;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #16181b;
+  --bg-soft: #1d2024;
+  --bg-inset: #23272c;
+  --text: #e8eaed;
+  --text-soft: #a7adb4;
+  --text-faint: #71777e;
+  --border: #2c3036;
+  --border-strong: #3a3f46;
+  --accent: #5a9fe0;
+  --accent-soft: #1b2a3a;
+  --success: #4caf7f;
+  --warning: #d6a430;
+  --danger: #e0635b;
+}
+
+:root {
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Pretendard, 'Apple SD Gothic Neo', Roboto, sans-serif;
+  --mono: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: var(--font);
+  background: var(--bg-soft);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}

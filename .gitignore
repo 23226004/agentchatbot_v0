@@ -36,3 +36,12 @@ docs/.pdca-snapshots/
 
 # ── 로그 ──
 *.log
+# ── 임시 작업/검증 산출물 ──
+scratchpad/
+# Vite 빌드 타임스탬프 아티팩트
+**/vite.config.ts.timestamp-*.mjs
+**/vite.config.js.timestamp-*.mjs
+# SvelteKit 생성물
+.svelte-kit/
+frontend/build/
+agentchatbot_v0/

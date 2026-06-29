@@ -42,3 +42,13 @@ def test_lawref_to_citation():
     c = ref.to_citation()
     assert set(c) == {"id", "kind", "title", "ref", "snippet", "url"}
     assert c["id"] == ids.point_id(uri)   # citation id ≡ point.id 단일 규칙
+
+
+def test_eff_date_format_normalized_to_single_id():
+    """'YYYYMMDD' 와 'YYYY-MM-DD' 가 같은 시행본이면 동일 article IRI·point.id (멱등, 교차검증)."""
+    raw = ids.article_iri("001823", "20260227", 2)
+    dash = ids.article_iri("001823", "2026-02-27", 2)
+    assert raw == dash
+    assert ids.point_id(raw) == ids.point_id(dash)
+    # 기존 raw 형식 데이터의 id 는 불변(정규화가 raw 를 바꾸지 않음)
+    assert raw.endswith("/20260227/제2조")

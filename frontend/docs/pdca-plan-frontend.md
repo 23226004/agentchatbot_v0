@@ -37,17 +37,21 @@ AI Agent 서비스의 **사용자 표면(surface)**. Codex 통찰대로 **FE는 
 
 ## 2. 스코프 (Full MVP)
 
+> **레퍼런스**: 레이아웃·표면은 **Codex 데스크탑 앱 벤치마크**(커맨드 센터·Task 사이드바·Artifact viewer·리뷰 큐). 상세 [`codex-reference.md` §4.5](./codex-reference.md). 멀티 에이전트 셸 [`../../docs/00-architecture/agent-platform.md`](../../docs/00-architecture/agent-platform.md).
+
 ### In scope
-1. **다중 대화 스레드** — 생성/전환/삭제, 사이드바.
-2. **스트리밍 대화** — 단계(thinking→tool→writing) + 토큰 in-place.
-3. **도구 호출 시각화** — `tool.call → tool.result` 접이식 셀(지난 턴 자동 접힘).
-4. **멀티턴 흐름** (5장) — 누적 근거 라이브러리, 이전 턴 인용·이어묻기, 분기, 긴 대화 요약, 윈도잉.
-5. **리치 콘텐츠 렌더링** (6장) — Markdown·표·수식(LaTeX)·Mermaid·콜아웃·접이식·PDF 임베드, 보안 새니타이즈.
-6. **인터랙티브 위젯** (7장) — 위드마크·지연이자·기한 계산 등 선언적 위젯(값 입력 → 즉시 연산).
-7. **승인 워크플로(Zero-Trust UX)** — 위험 동작 전 승인 모달.
-8. **슬래시 커맨드** — `/model`, `/new`, `/clear`, `/summarize`.
-9. **설정** — 모델 선택, 서버 URL, 테마(라이트/다크).
-10. **이력/영속** — 스레드·메시지·근거 라이브러리 backend 영속·복원.
+1. **멀티 에이전트 셸** — 좌측 에이전트 레일(자동 라우팅 + 분야 에이전트) + 라우팅 셀·핸드오프 표시(8장).
+2. **프로젝트 × 스레드 조직** — 프로젝트로 묶기·상태 필터·전환(Codex 벤치마크).
+3. **스트리밍 대화** — 단계(thinking→tool→writing) + 토큰 in-place.
+4. **도구 호출 시각화** — `tool.call → tool.result` 접이식 셀(지난 턴 자동 접힘).
+5. **Task 사이드바** — 우측 패널 탭 `계획 / 출처 / 산출물`: 실시간 플랜·누적 근거·산출물 미리보기(Codex).
+6. **Artifact viewer** — PDF·표·보고서 등 비코드 산출물 인앱 미리보기(Codex).
+7. **리뷰 큐(HITL)** — Zero-Trust 승인을 스레드 가로지르는 *큐 surface*로 + 인라인 승인 모달(Codex).
+8. **멀티턴 흐름** — 누적 근거 라이브러리, 이전 턴 인용·이어묻기, 분기(fork), 긴 대화 요약, 윈도잉.
+9. **리치 콘텐츠 렌더링** — Markdown·표·수식(LaTeX)·Mermaid·콜아웃·접이식·PDF 임베드, 보안 새니타이즈.
+10. **인터랙티브 위젯** — 위드마크·지연이자·기한 계산 등 선언적 위젯(값 입력 → 즉시 연산).
+11. **슬래시 커맨드 / 설정** — `/model` `/new` `/summarize` · 모델·테마·서버 URL.
+12. **이력/영속·비동기 재개** — 스레드·메시지·근거·산출물 영속, 창 닫고 와도 SSE 재연결로 이어짐(Codex).
 
 ### Non-goals
 자체 인증 시스템, 모바일 네이티브, 다국어(한국어 우선), 음성, 임의 HTML/JS 실행.
@@ -73,11 +77,13 @@ AI Agent 서비스의 **사용자 표면(surface)**. Codex 통찰대로 **FE는 
 | 레이어 | 책임 | 핵심 산출물 |
 |--------|------|------------|
 | `app/` | 전역 설정·프로바이더·테마·라우팅 진입 | 앱 셸, 토큰 주입, api 프로바이더 |
-| `pages/` | 라우트 화면 조합 | `ChatPage`, `SettingsPage` |
-| `widgets/` | 독립 UI 블록 | `ConversationView`, `Composer`, `ThreadSidebar`, `EvidencePanel`, `StatusBar` |
-| `features/` | 사용자 행동 | `send-message`, `approve-action`, `slash-command`, `edit-fork`, `summarize-thread`, `select-model`, `manage-thread` |
-| `entities/` | 엔티티 + 셀 | `message`(User/Agent/Tool 셀), `thread`, `citation`(근거), `session` |
+| `pages/` | 라우트 화면 조합 | `ChatPage`, `ReviewQueuePage`, `SettingsPage` |
+| `widgets/` | 독립 UI 블록 | `AgentRail`, `ThreadSidebar`, `ConversationView`, `Composer`, `TaskSidebar`(계획/출처/산출물), `ArtifactViewer`, `StatusBar` |
+| `features/` | 사용자 행동 | `send-message`, `approve-action`, `review-queue`, `slash-command`, `edit-fork`, `summarize-thread`, `select-model`, `manage-thread`, `manage-project` |
+| `entities/` | 엔티티 + 셀 | `message`(User/Agent/Tool/Routing/Handoff 셀), `thread`, `project`, `agent`(프로파일), `citation`(근거), `artifact`(산출물), `session` |
 | `shared/` | 규약·렌더·UI·유틸 | `api`(SSE/REST), `render`(md/math/mermaid/sanitize), `widgets`(위젯 카탈로그), `ui`(토큰·프리미티브) |
+
+> Codex 데스크탑 벤치마크 매핑: `TaskSidebar`(Task 사이드바) · `ArtifactViewer`(Artifact viewer) · `review-queue`(Review queue) · `project`+`AgentRail`(프로젝트/스레드 조직). 상세 [`codex-reference.md` §4.5](./codex-reference.md).
 
 > SvelteKit `src/routes/`는 page를 조합만 하는 **얇은 진입점**. 도메인은 `src/lib/` FSD.
 
@@ -86,30 +92,50 @@ AI Agent 서비스의 **사용자 표면(surface)**. Codex 통찰대로 **FE는 
 ## 4. 백엔드 계약 (protocol) — 초안
 
 ### 4.1 명령 (REST POST)
-| 경로 | 용도 |
-|---|---|
-| `POST /threads` · `GET /threads` · `GET /threads/{id}/messages` | 스레드/이력 |
-| `POST /threads/{id}/messages` → `{run_id}` | 메시지 전송(실행 시작) |
-| `GET /threads/{id}/stream?run_id=` (**SSE**) | 이벤트 수신 |
-| `POST /runs/{id}/interrupt` · `POST /runs/{id}/approve` | 중지·승인 |
-| `POST /messages/{id}/fork` → `{thread_id}` | 메시지 수정 시 분기(D7) |
-| `POST /threads/{id}/summarize` | 긴 대화 요약(D8) |
-| `GET /threads/{id}/citations` | 누적 근거 라이브러리(D6) |
-| `GET /models` · `GET/PUT /settings` | 설정 |
+
+> **backend 정합(2026-06-26, 계약 교차검증 Do-XV12)**: 경로 키잉을 실제 backend 구현에 맞춰 정정했다.
+> backend 는 **run↔stream 디커플**(POST→run_id 수령, 별도 GET 스트림)과 **thread 스코프 승인/분기**가
+> 정설이므로, FE 는 아래 정정된 경로를 따른다. `상태`: ✅ 구현완료(M1 연동 대상) / ⛔ backend 미구현 / 🔜 후속.
+
+| 경로 | 용도 | 상태 |
+|---|---|---|
+| `POST /threads` → `{id}` · `GET /threads[?owner_id=]` → `{threads}` · `GET /threads/{id}/messages` → `{messages}` | 스레드 생성·**목록(사이드바)**·이력 | ✅ |
+| `POST /threads/{id}/messages` (body `{message, model?}`) → `{run_id}` | 메시지 전송(실행 시작). **모델 해석 우선순위 = body.model → settings.model → 백엔드 기본**(즉 `PUT /settings {model}` 로 저장한 선택이 이후 run 기본값이 됨 — body 에 매번 안 보내도 됨). body.model 명시값은 알 수 없으면 422, 저장값이 stale 이면 조용히 기본 폴백. 진행중 run 409 | ✅ |
+| `GET /runs/{run_id}/stream` (**SSE**) | 이벤트 수신. ~~`/threads/{id}/stream?run_id=`~~ 아님 — **run 키잉**(run_id 는 POST 응답으로 보유) | ✅ |
+| `POST /threads/{id}/approve` (body `{approve: bool}` **또는** `{approved: [tool_call_id…]}`) | 승인/거절. ~~`/runs/{id}/approve`~~ 아님 — **thread 의 승인-대기 run 을 CAS 재개**. 없으면 409. **per-tool 선택적 실행(Stage 2)**: `approved` 에 실행할 도구 id 배열을 주면 그것만 실행하고 나머지는 거절(빈 배열=전량 거절). `approved` 가 리스트[str] 아니면 422 | ✅ |
+| `POST /threads/{id}/fork` (body `{fork_point_message_id}`) → `{thread_id}` | 메시지 수정 시 분기(D7). ~~`/messages/{id}/fork`~~ 아님 — **thread+기준메시지** | ✅ |
+| `POST /threads/{id}/summarize` (body `{from_seq?, to_seq?}`) · `GET /threads/{id}/summaries` | 긴 대화 요약·요약 이력(D8) | ✅ |
+| `GET /threads/{id}/citations` → `{citations}` | 누적 근거 라이브러리(D6) | ✅ |
+| `GET /models` → `{models:[{id, provider, default}]}` · `GET/PUT /settings` | 설정. models=**구성된 LLM 전체**(GPT 다버전/로컬) — 1개만 뜨면 백엔드 .env 가 1개만 구성된 것(GPT_MODELS+LLM_MODEL 둘 다 설정 필요). `provider`(openai/compatible)로 "GPT/로컬" 라벨·`default` 표시. **PUT /settings {model}** = 모델 선택 저장 → 이후 run 기본값으로 적용 | ✅ |
+| `POST /runs/{id}/interrupt` → `{run_id, status}` | 실행 중지. running=협조취소(`interrupting`→다음 청크서 종결), awaiting_approval=즉시 `interrupted`. 없으면 404·종료됨 409 | ✅ |
+| `GET /agents` | 에이전트 프로파일 목록 | 🔜 멀티에이전트 후속 |
+| `GET /projects`·`POST /projects` · `GET /review-queue`·`POST /review/{id}/decision` · `GET /artifacts/{id}` | 프로젝트·리뷰 큐·산출물(Codex) | 🔜 Codex 확장 후속 |
+
+> **CORS**: backend 에 `CORSMiddleware` 적용됨(`CORS_ORIGINS` env, 기본 `http://localhost:5180`). FE dev origin 이 :5180 이
+> 아니면 backend `CORS_ORIGINS` 에 추가해야 브라우저가 차단하지 않는다. credentials 허용(와일드카드 불가, 명시 origin).
 
 ### 4.2 이벤트 (SSE `event:` 타입)
-| event | payload | UI 반응 |
-|---|---|---|
-| `run.started` | `{run_id, thread_id}` | 스피너 on, live 턴 표시 |
-| `message.delta` | `{text}` | active 셀 in-place(O(n) tail) |
-| `tool.call` / `tool.result` | `{id, name, args}` / `{id, content}` | 도구 셀 |
-| `message.completed` | `{text, content_type:"markdown", citations:[id]}` | 셀 확정 + 렌더 + 근거 라이브러리 갱신 |
-| `citation.added` | `{id, kind, title, ref, snippet, url}` | 근거 패널 누적(중복제거) |
-| `approval.requested` | `{id, action, detail}` | 승인 모달 |
-| `error` / `run.done` | `{message}` / `{run_id}` | 에러 셀 / 스피너 off |
 
-> 메시지 본문 `content_type:"markdown"` 고정. 인용은 본문 내 `[[cite:<id>]]` → 근거 라이브러리 항목으로 해소.
-> 위젯은 본문 ` ```widget ` 펜스로 표현(7장). agent가 토큰 스트림(`stream_mode="messages"`) 미지원이면 `message.delta` 생략하고 `message.completed`로 시작 — **Check 항목**.
+> **backend 정합(2026-06-26)**: backend 가 실제 방출하는 **8종**(`run.started`·`tool.call`·`tool.result`·
+> `citation.added`·`message.completed`·`approval.requested`·`error`·`run.done`)을 ✅ 로 표시. 모든 payload 에
+> `seq`(관찰순서=DB순서, Last-Event-ID 재연결 기반)가 추가로 붙는다 — FE 는 무시해도 무방. 🔜 는 미방출(후속).
+
+| event | payload (실제) | UI 반응 | 상태 |
+|---|---|---|---|
+| `run.started` | `{run_id, thread_id, model, seq}` | 스피너 on, live 턴 표시(+사용 모델 칩) | ✅ |
+| `tool.call` / `tool.result` | `{id, name, args, seq}` / `{id, content, seq}` | 도구 셀 | ✅ |
+| `message.completed` | `{text, content_type:"markdown", citations:[id], seq}` | 셀 확정 + 렌더 + 근거 라이브러리 갱신 | ✅ |
+| `citation.added` | `{id, kind, title, ref, snippet, url, seq}` | 출처 탭 누적(중복제거) | ✅ |
+| `approval.requested` | `{id, run_id, action:"tool", tools:[{id,name,args}], detail, seq}` (`id`==`run_id`) | 승인 모달 — **`tools`** 로 무엇을 승인하는지 표시(예: `search_legal('건폐율')`). 전체 단위(`{approve}`) **또는 per-tool 선택**(`{approved:[id…]}`, Stage 2) | ✅ |
+| `tool.result` (거절분) | `{id, content, rejected:true, seq}` | per-tool 선택에서 **거절된 도구셀**은 `rejected:true` + 거부 사유 content 로 방출(승인분은 기존 `{id,content}` 실결과). FE 가 셀을 거절 상태로 렌더 | ✅ |
+| `run.done` | `{run_id, seq}` (거절=`status:"rejected"`, 중지=`status:"interrupted"`) | 스피너 off, 턴 종료 | ✅ |
+| `error` | `{message, seq, ...}` — **항상 `message` 포함**. cite_forgery 시 `{message, reason:"cite_forgery", forged, valid}` | 에러 셀 (fail-closed: 본문 보류) | ✅ |
+| `message.delta` | `{text}` | active 셀 in-place(O(n) tail) | 🔜 미방출 — agent `stream_mode="updates"`라 토큰 스트리밍 없음. **FE 는 delta 없이 `message.completed`로 시작**(확정) |
+| `artifact.created` · `plan.updated` · `routing.decided` · `handoff` | (Codex/멀티에이전트) | 산출물·계획·라우팅·핸드오프 셀 | 🔜 후속 |
+
+> 메시지 본문 `content_type:"markdown"` 고정. 인용은 본문 내 `[[cite:<id>]]` → 근거 라이브러리 항목으로 해소
+> (backend 가 마커 공백·위조를 서버측에서 정규화/검증). 위젯은 본문 ` ```widget ` 펜스로 표현(7장).
+> 턴 종료 신호: 정상은 `message.completed`→`run.done`, 오류는 `error`(이때 `run.done` 억제) — FE 는 둘 다로 스피너 off.
 
 ---
 
@@ -212,18 +238,23 @@ src/lib/
     ui/         tokens.css · Button/Modal/Spinner/Markdown(.svelte)
     lib/        utils · id · time
   entities/
-    message/    types.ts · message-store.svelte.ts · UserCell/AgentCell/ToolCell.svelte
+    message/    types.ts · message-store.svelte.ts · UserCell/AgentCell/ToolCell/RoutingCell/HandoffCell.svelte
     thread/     thread-store.svelte.ts · types.ts (분기 트리 포함)
+    project/    project-store.svelte.ts · types.ts                       # Codex
+    agent/      profile-store.svelte.ts · types.ts (프로파일)             # 멀티에이전트
     citation/   library.svelte.ts(누적·중복제거) · types.ts · CitationChip.svelte
+    artifact/   artifact-store.svelte.ts · types.ts                      # Codex
     session/    설정·연결 상태
   features/
-    send-message/ · approve-action/ · slash-command/ · edit-fork/ · summarize-thread/ · select-model/ · manage-thread/
+    send-message/ · approve-action/ · review-queue/ · slash-command/ · edit-fork/ · summarize-thread/ · select-model/ · manage-thread/ · manage-project/
   widgets/
-    ConversationView.svelte · Composer.svelte · ThreadSidebar.svelte · EvidencePanel.svelte · StatusBar.svelte
-  pages/        ChatPage.svelte · SettingsPage.svelte
+    AgentRail.svelte · ThreadSidebar.svelte · ConversationView.svelte · Composer.svelte ·
+    TaskSidebar.svelte(계획/출처/산출물) · ArtifactViewer.svelte · StatusBar.svelte
+  pages/        ChatPage.svelte · ReviewQueuePage.svelte · SettingsPage.svelte
   app/          App.svelte · theme.ts · providers.ts
 src/routes/     SvelteKit 얇은 진입점
 ```
+> `EvidencePanel`은 `TaskSidebar`의 **출처 탭**으로 흡수(Codex Task 사이드바 통합).
 
 ---
 
@@ -235,18 +266,20 @@ src/routes/     SvelteKit 얇은 진입점
 | **M2** | 핵심 대화 | Composer+ConversationView+send-message, 스트리밍 in-place(O(n)) |
 | **M3** | 리치 렌더 | `shared/render`(md/표/수식/Mermaid/콜아웃)+새니타이즈+점진 렌더+원본 토글 |
 | **M4** | 위젯 | `shared/widgets` 카탈로그 4종+스키마 검증+면책/근거, ```widget 렌더 |
-| **M5** | 도구·승인 | ToolCell(접이식)+approve-action 모달→/approve |
-| **M6** | 멀티턴 | 누적 근거 라이브러리+턴 앵커+자동스크롤+윈도잉+이어묻기 |
-| **M7** | 분기·요약 | edit-fork(분기 트리)+summarize-thread |
-| **M8** | 스레드·설정 | ThreadSidebar+manage-thread+이력복원+SettingsPage+slash-command |
-| **M9** | 폴리시 | 에러·재연결·내보내기(PDF/docx)·a11y·반응형 |
+| **M5** | 도구·승인·리뷰 큐 | ToolCell(접이식)+approve-action 모달→/approve+**리뷰 큐 surface**(Codex HITL) |
+| **M6** | Task 사이드바 | `TaskSidebar` 탭(계획/출처/산출물)+`plan.updated`+누적 근거(출처 탭)+**ArtifactViewer**(Codex) |
+| **M7** | 멀티턴 | 턴 앵커+자동스크롤+윈도잉+이어묻기 |
+| **M8** | 분기·요약 | edit-fork(분기 트리)+summarize-thread |
+| **M9** | 멀티에이전트 셸 | `AgentRail`+`routing.decided`/`handoff` 셀+프로젝트×스레드 조직+수동 오버라이드 |
+| **M10** | 설정·폴리시 | SettingsPage+slash-command+에러·**비동기 재개**·내보내기(PDF/docx)·a11y·반응형 |
 
-각 M은 backend 계약을 mock으로 먼저 통과 → 실제 연결.
+각 M은 backend 계약을 mock으로 먼저 통과 → 실제 연결. M5/M6은 **Codex 데스크탑 벤치마크** 핵심 표면.
 
 ---
 
 ## 11. Check 기준 (다음 PDCA 단계)
 **기능**: 스트리밍 in-place→확정 / 도구 셀 매핑 / 리치 블록 정확 렌더 / 위젯 값변경 즉시 재계산 / 누적 근거 중복제거·점프 / 분기 보존 / 요약 후 컨텍스트 축소 / 승인 게이트.
+**Codex 벤치마크**: Task 사이드바 계획 탭이 `plan.updated`로 실시간 갱신 / 산출물 인앱 미리보기(ArtifactViewer) / 리뷰 큐가 스레드 가로질러 승인 집계 / 라우팅 셀이 `routing.decided` 근거 표시 / 창 닫고 재진입 시 비동기 런 재개.
 **보안(Zero-Trust)**: 새니타이즈로 `<script>`·이벤트핸들러 제거 검증 / raw HTML 미실행 / 위젯 파라미터 검증·미지원 폴백 / 링크 확인.
 **비기능**: O(n)(긴 스레드에서 토큰 1개 추가가 전체 재렌더 안 함, 프로파일) / SSE 재연결·중복방지 / a11y / **SoC 린트**(위젯·페이지에서 직접 fetch/EventSource 0).
 **테스트**: Vitest(렌더 파이프라인·새니타이즈·위젯 계산·슬래시·store 전이) / Playwright(전송→스트리밍→도구→위젯→승인→분기 happy path, 재연결) / mock SSE 픽스처.

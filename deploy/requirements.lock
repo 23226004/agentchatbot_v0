@@ -1,0 +1,86 @@
+# deploy/requirements.lock — 검증된(261 green) PyPI 의존 정확 핀(재현 빌드용).
+# 생성: VIRTUAL_ENV=agent/.venv uv pip freeze --exclude-editable
+# 사용:
+#   - 컨테이너: backend/Dockerfile 이 `uv pip install -c …/requirements.lock <4 패키지>` 로 전 전이의존을 핀.
+#   - 로컬: cd agent && uv venv && uv pip install -r requirements.txt -c ../deploy/requirements.lock
+# editable 5패키지(agent_app/backend_app/legal_core/legal_infra/db_admin)는 requirements.txt 가 설치.
+# observability extra(langfuse/langchain/opentelemetry-*) 포함. 갱신: 의존 변경+green 재확인 후 위 명령 재생성.
+#
+annotated-doc==0.0.4
+annotated-types==0.7.0
+anyio==4.14.0
+backoff==2.2.1
+certifi==2026.6.17
+charset-normalizer==3.4.7
+click==8.4.2
+distro==1.9.0
+fastapi==0.138.1
+googleapis-common-protos==1.75.0
+grpcio==1.81.1
+h11==0.16.0
+h2==4.3.0
+hpack==4.2.0
+httpcore==1.0.9
+httpx==0.28.1
+hyperframe==6.1.0
+idna==3.18
+iniconfig==2.3.0
+jiter==0.15.0
+jsonpatch==1.33
+jsonpointer==3.1.1
+langchain==1.3.11
+langchain-core==1.4.8
+langchain-openai==1.3.3
+langchain-protocol==0.0.18
+langfuse==3.15.0
+langgraph==1.2.6
+langgraph-checkpoint==4.1.1
+langgraph-checkpoint-postgres==3.1.0
+langgraph-prebuilt==1.1.0
+langgraph-sdk==0.4.2
+langsmith==0.9.3
+numpy==2.5.0
+openai==2.44.0
+opentelemetry-api==1.43.0
+opentelemetry-exporter-otlp-proto-common==1.43.0
+opentelemetry-exporter-otlp-proto-http==1.43.0
+opentelemetry-proto==1.43.0
+opentelemetry-sdk==1.43.0
+opentelemetry-semantic-conventions==0.64b0
+orjson==3.11.9
+ormsgpack==1.12.2
+packaging==24.2
+pluggy==1.6.0
+portalocker==3.2.0
+protobuf==7.35.1
+psycopg==3.3.4
+psycopg-binary==3.3.4
+psycopg-pool==3.3.1
+pydantic==2.13.4
+pydantic-core==2.46.4
+pygments==2.20.0
+pyparsing==3.3.2
+pytest==9.1.1
+pytest-asyncio==1.4.0
+pytest-timeout==2.4.0
+python-dotenv==1.2.2
+pyyaml==6.0.3
+qdrant-client==1.18.0
+rdflib==7.6.0
+regex==2026.5.9
+requests==2.34.2
+requests-toolbelt==1.0.0
+sniffio==1.3.1
+starlette==1.3.1
+tenacity==9.1.4
+tiktoken==0.13.0
+tqdm==4.68.3
+typing-extensions==4.15.0
+typing-inspection==0.4.2
+urllib3==2.7.0
+uuid-utils==0.16.2
+uvicorn==0.49.0
+websockets==15.0.1
+wrapt==1.17.3
+xxhash==3.7.0
+zstandard==0.25.0

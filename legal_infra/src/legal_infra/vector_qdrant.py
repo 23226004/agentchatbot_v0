@@ -64,6 +64,23 @@ class QdrantVector:
             ))
         self.client.upsert(self.collection, points=points)
 
+    def supersede(self, resource_id: str, keep_eff_date: str) -> None:
+        """같은 법령(resource_id)의 keep_eff_date 가 아닌 시행본 point 를 is_current=False 로 강등.
+
+        삭제가 아니라 payload 강등 — as-of(시점) 질의가 옛 시행본을 여전히 찾도록 ELI 버전 보존.
+        upsert 는 point.id 멱등이라 같은 시행본 재적재는 무해하나, **시행일자가 바뀌는 개정**은
+        새 point 를 추가할 뿐 옛 point 를 안 지워 is_current=True 가 둘 남는다(stale-current) → 강등으로 해소.
+        keep_eff_date 는 payload 의 eff_date 와 같은 형식(ISO 'YYYY-MM-DD')이어야 한다.
+        """
+        flt = models.Filter(
+            must=[models.FieldCondition(key="resource_id",
+                                        match=models.MatchValue(value=resource_id))],
+            must_not=[models.FieldCondition(key="eff_date",
+                                            match=models.MatchValue(value=keep_eff_date))],
+        )
+        self.client.set_payload(self.collection, payload={"is_current": False},
+                                points=flt, wait=True)
+
     def search(self, q: DenseSparse, k: int, flt: dict | None = None) -> list[Hit]:
         qf = _build_filter(flt)
         if q.sparse:                           # 하이브리드: dense + sparse prefetch → RRF 융합

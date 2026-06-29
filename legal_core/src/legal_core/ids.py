@@ -20,8 +20,13 @@ def resource_iri(law_id: str) -> str:
 
 
 def expression_iri(law_id: str, eff_date: str) -> str:
-    """LegalExpression (특정 시행본). eff_date = 'YYYYMMDD' 또는 'YYYY-MM-DD'."""
-    return f"{resource_iri(law_id)}/{eff_date}"
+    """LegalExpression (특정 시행본). eff_date 'YYYYMMDD'/'YYYY-MM-DD' 모두 받아 **정규화**(대시 제거).
+
+    형식 정규화 없으면 같은 시행본을 'YYYYMMDD' vs 'YYYY-MM-DD' 로 넘기는 호출자에 따라
+    article IRI·point.id(UUIDv5)가 갈라져 동일 조문이 2-id 로 분열(멱등 깨짐, 교차검증 latent).
+    현재 파이프라인은 항상 raw 라 기존 id 불변, 정규화는 미래 호출자 footgun 만 차단.
+    """
+    return f"{resource_iri(law_id)}/{eff_date.replace('-', '')}"
 
 
 def article_segment(article_no: int | str, branch_no: int | str | None = None) -> str:

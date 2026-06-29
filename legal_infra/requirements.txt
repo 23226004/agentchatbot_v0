@@ -1,0 +1,9 @@
+# legal_infra 설치 매니페스트 — `cd legal_infra && uv pip install -r requirements.txt`.
+#
+# PyPI 의존(qdrant-client/rdflib/requests)은 pyproject.toml [project.dependencies] → `-e .` 가 끌어옴.
+# 형제 legal_core(PyPI 인덱스 부재)는 legal_infra 가 eager import(provider/embedding 모듈 로드 시)
+# 하므로 editable 로 함께 설치해야 한다 — 없으면 `import legal_infra` 가 ModuleNotFoundError.
+# ※ 선택적 로컬 임베딩/리랭커(LocalEmbedding/Reranker)는 torch·FlagEmbedding·transformers 가 추가로
+#   필요(메서드 내부 lazy import). 원격(RemoteEmbedding) 경로만 쓰면 불요 — 그래서 pyproject 미선언.
+-e ../legal_core
+-e .

@@ -1,0 +1,27 @@
+# conversation-store 인프라 (Design v0.3 §2/§6)
+# 로컬 Docker: PostgreSQL 16 — transcript 테이블 + LangGraph checkpoint* 4테이블 공존.
+# 원격 :5433(contechdx-db)은 타 시스템 공유라 별도 자체 인스턴스 사용.
+#   기동:  docker compose -f deploy/docker-compose.convstore.yml up -d
+#   접속:  postgresql://convstore:convstore@localhost:5434/convstore
+
+services:
+  convstore-postgres:
+    image: postgres:16
+    container_name: convstore-postgres
+    environment:
+      POSTGRES_USER: convstore
+      POSTGRES_PASSWORD: ${CONVSTORE_PG_PASSWORD:-convstore}
+      POSTGRES_DB: convstore
+    ports:
+      - "5434:5432"
+    volumes:
+      - convstore_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U convstore -d convstore"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  convstore_pg:

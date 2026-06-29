@@ -2,8 +2,10 @@
 
 > **Summary**: 한국 법령 GraphRAG 백엔드 v1 — law.go.kr 실시간 API 본문 + AI-Hub 위임그래프(검증) + FlagEmbedding 하이브리드(dense+sparse) + BGE-reranker-v2-m3 + Fuseki(RDF) + Qdrant(vector) 구현 완성. "거실 정의" E2E GraphRAG 인용 검증. 
 >
-> **Project**: 2026_06_20_Agent · **Duration**: 2026-06-24 (6 slices in ~12h) · **Status**: Check Pass (~90%, 정직 평가)
-> **Feature Owner**: TreeAnderson · **Lead Validator**: 3관점 독립 교차검증(데이터/기술/아키텍처)
+> **Project**: 2026_06_20_Agent · **Duration**: 2026-06-24~25 (**8 slices**) · **Status**: Check Pass (슬라이스1~8, 정직 평가) — 슬라이스8(RunService+FR-12) 추가 완료
+> **Feature Owner**: TreeAnderson · **Lead Validator**: 3관점 독립 교차검증(데이터/기술/아키텍처) + 슬라이스8 5관점(통합 현실성·보안·아키텍처 추가)
+>
+> **2026-06-25 갱신**: 본문 아래 v1.0(슬라이스1~6) 보고서에 **§A(슬라이스7~8 + 다각도 교차검증)** 가 추가됨. 최신 상태는 §A 참조.
 
 ---
 
@@ -671,9 +673,9 @@ total: 54 cases
 | 문서 | 버전 | 경로 |
 |------|------|------|
 | Plan | 0.3 | `docs/01-plan/features/db-layer.plan.md` |
-| Design | 0.3.1 | `docs/02-design/features/db-layer.design.md` |
+| Design | 0.3.1 | `docs/02-design/features/db-layer.design.md` (§12 슬라이스8 [x]) |
 | Corpus Analysis | v2 | `docs/02-design/features/db-layer.corpus-analysis.md` |
-| Gap Analysis | v5 | `docs/03-analysis/db-layer.analysis.md` |
+| Gap Analysis | v8 + 슬라이스8 Check(심화) | `docs/03-analysis/db-layer.analysis.md` |
 | PDCA Status | 2026-06-24 | `docs/.pdca-status.json` (history 포함) |
 
 ---
@@ -683,3 +685,63 @@ total: 54 cases
 | Version | Date | Status | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-06-24 14:30 | Final | v1~v5 전체 주기 통합. 정직 90% 평가, 게이트 명시, 학습 종합 |
+| 2.0 | 2026-06-25 | Final | §A 추가: 슬라이스7(위임그래프 양방향)·슬라이스8(RunService+FR-12) 완료, 5관점 교차검증(실LangGraph 통합·보안·아키텍처), HIGH 버그 발견·수정 |
+
+---
+
+# §A. 슬라이스7~8 + 다각도 교차검증 (2026-06-25)
+
+> 위 v1.0 보고서는 슬라이스1~6(검색·적재·E2E) 기준. 본 절은 이후 완료된 **슬라이스7(위임그래프)·슬라이스8(답변계층)** 과 그에 대한 **5관점 적대 교차검증**을 종합한다.
+
+## A.1 무엇을 추가로 만들었나
+
+### 슬라이스7 — 위임그래프 + 검증게이트 (FR-02/FR-03)
+- `db-admin`: `delegation_build.py`(lsStmd 기반 상하위법 트리 → `delegatesTo` 엣지) + `inspector/`(검증 리포트, ambiguous>0 적재중단). **양방향 expand**(상위법→하위 시행령/규칙 회수)까지 교차검증으로 보강. integration 57건.
+
+### 슬라이스8 — RunService + 도구 교체 (FR-08/FR-12)
+| 산출 | 위치 | 내용 |
+|------|------|------|
+| **RetrievalService 이전** | `legal_core/retrieval.py` | backend→legal_core(§9.1). agent가 backend 의존 없이 사용. `format_for_llm`(`[id:]` 라벨) 추가 |
+| **공유 DI** | `legal_infra/provider.py` | env→concrete→RetrievalService 단일 출처. container/agent 공유 |
+| **FR-12 도구 교체** | `agent/tools/legal.py` | `search_legal` = RetrievalService 경유, `response_format="content_and_artifact"` (텍스트+AnswerContext 동시) |
+| **C-2 인용 규칙** | `agent/prompts/system.py` | `[[cite:{id}]]` 주입·위조 금지 |
+| **C-3 단일소스** | `agent/tools/law.py` | `_flatten_article`→`legal_core.lawgo.flatten_article` 위임(역의존 제거) |
+| **RunService(FR-08)** | `backend/services/run_service.py` | agent updates→SSE 8종. citation.added(artifact)·cite 위조검증·면책·버전고지 서버측 강제 |
+
+**의도적 경계**: RunService 영속(transcript/citations DB)·seq 채번·approval 재개는 **conversation-store Do 소유**(설계 §12-8 명시) → 인메모리 SSE 스켈레톤으로 구현.
+
+## A.2 다각도 교차검증 (5관점) — "단일 검증기·페이크 불신" 규율
+
+| 관점 | 방법 | 결과 |
+|------|------|------|
+| gap-detector | 설계↔구현 추적 | 슬라이스8 ~96%, Critical/Major 0, 보류 정확 분류 |
+| 런타임 mutation | 코드 변이로 테스트 theater 검사 | 28건 theater 아님. 사각 2건(dedup·citation 중복) 노출→회귀게이트 보강 |
+| **통합 현실성** | **실제 LangGraph**(langgraph 1.2.6) 스텁 LLM 구동 | 덕타이핑 가정 실측 확인 + **HIGH 버그 발견** |
+| 보안 공격면 | PoC 실행 | SSE data 인젝션·cite-id 위조 차단 확인. Med 3건 |
+| 아키텍처 | clean import 실행 | 순환 0·§9.1 준수·이전 무결성·DI 중복 0 |
+
+### 🔴 핵심 교훈 — 페이크가 못 잡고 실제 LangGraph만 잡은 HIGH 버그
+`AIMessage.content`가 **콘텐츠블록 list**(`[{"type":"text",...}]`, Anthropic식 표준)일 때 `isinstance(str)` 가드가 **본문 통째 누락** → message.completed=면책만, **cite 위조검증 무력화**. 페이크 stream 30건이 전부 통과했으나 실제 그래프만 노출. **수정**: `_text_of()` 정규화 + 실경로 재확인.
+
+### 발견→수정 종합
+| 등급 | 항목 | 수정 |
+|:----:|------|------|
+| 🔴 HIGH | list-content 본문 누락 | `_text_of()` str/list 정규화 |
+| Med | 서버권위 줄(시행일자·면책) 사칭 | `_AUTHORITY_LINE` strip |
+| Med | 도구 오류 내부정보 노출 | 고정문구화 |
+| Med | error 뒤 run.done(실패 오인) | error terminal |
+| Low | sse_wire event명 미이스케이프 | 개행/CR strip |
+
+## A.3 검증자산 (레포 영속)
+- 단위/계약 테스트 **33 통과**(legal_core+backend) — list-content·권위사칭·error-terminal·dedup·citation 중복 회귀게이트 포함.
+- **실제-LangGraph E2E 승격**: `backend/scripts/e2e_runservice_realgraph.py`(exit 0, 4 케이스). HIGH 회귀를 실경로로 봉인.
+
+## A.4 잔여 백로그 (미수정, 명시 — false confidence 방지)
+- **의미적 답변정합**(can→must 왜곡·무인용 문장 탐지) — 구문 cite만 강제.
+- **프롬프트 인젝션** 본문 펜싱/sanitize · **tool.result 전문 노출**(snippet 200자 계약 불일치).
+- **create_react_agent deprecation**(LangGraph V1→V2) → `langchain.agents.create_agent` 마이그레이션.
+- **conversation-store Do 진입게이트**: 인메모리 `_Acc`→Repository 교체 시 ① seq DB 원자채번 ② citation 방출↔freeze 원자성 ③ approval interrupt 재개 ④ 커밋후방출.
+- **인프라 의존 검증 미실행**: 전체 57건(legal_infra·db-admin, torch/qdrant 필요)·라이브 E2E(`e2e_geosil.py`, Qdrant/Fuseki 필요)는 이 세션 미가동 → Recall 등 실품질은 인프라 기동 후 별도.
+
+## A.5 최종 판정
+**슬라이스1~8 Check 통과(정직 평가).** correctness·계약·안전성은 실경로로 견고 확인, HIGH 버그 닫음, 아키텍처 위반 0. production(보안·SRE)·법률실무 안전·다버전(슬라이스6)·conversation-store 영속은 **별 차원으로 전부 게이트 명시**. v1 = 검증된 수직슬라이스 ≠ production-ready ≠ 법률실무 안전.

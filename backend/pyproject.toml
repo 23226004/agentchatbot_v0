@@ -7,7 +7,17 @@ name = "backend_app"
 version = "0.1.0"
 description = "법령 GraphRAG backend — api·services(RetrievalService/RunService)·core(DI). legal_core/legal_infra 의존."
 requires-python = ">=3.12"
-dependencies = ["requests>=2.31"]
+# 아래는 PyPI 의존만. **형제 패키지(legal_core·legal_infra·agent_app)는 PyPI 인덱스에 없어
+# 여기 선언 불가** → editable 로 함께 설치해야 한다(requirements.txt 참조). 미설치 시 backend 는
+# legal_core(eager, services/retrieval.py)·legal_infra/agent_app(lazy)에서 ModuleNotFoundError.
+dependencies = [
+    "requests>=2.31",
+    "psycopg[binary]>=3.1",
+    "psycopg-pool>=3.2",
+    "langgraph-checkpoint-postgres>=3.1,<4",  # 실제 3.1.0 검증 — floor 현행화 + 다음 메이저 cap
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

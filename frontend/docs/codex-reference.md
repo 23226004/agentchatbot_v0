@@ -128,11 +128,49 @@ Codex 구조를 우리 `frontend/src/` FSD 레이어로 옮기면:
 
 ---
 
+## 4.5 Codex **데스크탑 앱** 벤치마크 (2026)
+
+> TUI(§3)는 단일 화면이었지만, 데스크탑 앱은 **여러 에이전트 스레드를 병렬로 굴리는
+> 커맨드 센터**다. 우리 멀티 에이전트 플랫폼과 골격이 같아 패턴을 적극 차용한다.
+> 단, 코딩 전용 기능(diff·PR·터미널·SSH·worktree·in-app browser)은 제외하고
+> 업무 에이전트에 가치 있는 패턴만 흡수한다.
+
+### 데스크탑 앱의 핵심 표면
+- **프로젝트 단위 스레드 조직**: 스레드를 프로젝트로 묶고 상태로 필터. 컨텍스트 손실 없이 전환.
+- **Task 사이드바**: 실행 중 에이전트의 **계획·출처·생성 산출물**을 실시간 노출.
+- **Artifact viewer**: PDF·스프레드시트·문서·슬라이드 등 **비코드 산출물을 창 안에서 미리보기**.
+- **Review queue**: 자동 에이전트가 무단 반영하지 못하게 막는 **HITL 통제면**. 변경을 검토→승인/수정.
+- **Local / Cloud 모드 + 비동기 재개**: 원격 실행 시 창을 닫았다 와도 이어받음.
+- **Automations / Triggers**: 스케줄·이벤트로 스레드 자동 시작.
+
+### 우리 적용 (채택 / 적응 / 제외)
+
+| Codex 데스크탑 패턴 | 우리 적용 | FSD 위치 |
+|---|---|---|
+| Task 사이드바(계획·출처·산출물 실시간) | **채택** — 우측 패널 탭 `계획/출처/산출물` | `widgets/TaskSidebar` |
+| Artifact viewer | **채택** — 산출물 미리보기(법령 별표 PDF·표·보고서) | `widgets/ArtifactViewer`, `entities/artifact` |
+| Review queue(HITL) | **채택·승격** — Zero-Trust 승인을 *큐 surface*로 | `features/review-queue` |
+| 프로젝트 단위 스레드 | **채택** — 프로젝트 × 에이전트 × 스레드 | `entities/project`, `widgets/ThreadSidebar` |
+| Local/Cloud + 닫고 재개 | **적응** — 비동기 런 + SSE 재연결(닫고 와도 이어짐) | `shared/api`(디커플드 브로커) |
+| Automations/Triggers | **후순위** — 스케줄 런 | (2차) |
+| diff·PR·터미널·SSH·worktree·in-app browser | **제외** — 코딩 전용 | — |
+
+### 멀티 에이전트로의 번안 (Codex에 없던 우리 고유)
+- **에이전트 레일**: 좌측에 분야 에이전트 함대(자동 라우팅 + 법률·세무·건설…).
+- **라우팅 투명성**: supervisor 자동 라우팅의 "어느 에이전트로·왜"를 *라우팅 셀*로 노출.
+- **핸드오프 표시**: 에이전트 간 제어 위임을 트랜스크립트에 셀로.
+
+> 시각 언어: Codex의 "다중 패널 커맨드 센터 + operator 밀도"를 가져오되,
+> 우리 **신뢰·중립 톤**(법률 색 배제, 도메인은 활성 에이전트가 칠함)으로 흡수.
+
+---
+
 ## 5. 다음 단계 후보
-1. `shared/api` — backend 이벤트 스트림/명령 규약 정의 (SSE 또는 WS 스키마)
-2. `entities/message` — message·thread 모델 + 셀 컴포넌트 골격
-3. `widgets/ConversationView` + `widgets/Composer` — 핵심 화면 2개
-4. `app/` — 라우팅·프로바이더·이벤트 버스 셋업 (SvelteKit 여부 결정 필요)
+1. `shared/api` — backend 이벤트 스트림/명령 규약 정의 (SSE), `routing.decided`·`handoff`·`artifact` 이벤트 포함
+2. `entities/message` + `entities/artifact` + `entities/project` — 모델·셀 골격
+3. `widgets/ConversationView` · `Composer` · `TaskSidebar`(계획/출처/산출물) — 핵심 화면
+4. `features/review-queue` — HITL 승인 큐 surface
+5. `app/` — 라우팅·프로바이더·이벤트 버스 셋업 (SvelteKit static 확정)
 
 ---
 
@@ -141,3 +179,7 @@ Codex 구조를 우리 `frontend/src/` FSD 레이어로 옮기면:
 - [Repository Structure | DeepWiki](https://deepwiki.com/openai/codex/1.2-repository-structure)
 - [Terminal User Interface (TUI) | DeepWiki](https://deepwiki.com/openai/codex/4.1-terminal-user-interface-(tui))
 - [CLI – Codex | OpenAI Developers](https://developers.openai.com/codex/cli)
+- [App – Codex | OpenAI Developers](https://developers.openai.com/codex/app) · [Features](https://developers.openai.com/codex/app/features)
+- [Introducing the Codex app | OpenAI](https://openai.com/index/introducing-the-codex-app/)
+- [Inside the Codex App Workspace: PR Review Pane, Task Sidebar, Artifact Viewer](https://codex.danielvaughan.com/2026/04/17/codex-app-workspace-pr-review-task-sidebar-artifact-viewer/)
+- [Codex Desktop App: Automations, Triggers and the Review Queue](https://codex.danielvaughan.com/2026/04/08/codex-desktop-automations/)

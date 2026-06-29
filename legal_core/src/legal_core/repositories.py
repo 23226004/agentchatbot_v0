@@ -36,6 +36,14 @@ class VectorRepository(Protocol):
         """dense/sparse prefetch + RRF 융합 + payload 필터."""
         ...
 
+    def supersede(self, resource_id: str, keep_eff_date: str) -> None:
+        """개정 반영: 같은 법령의 keep_eff_date 가 **아닌** 시행본 point 를 is_current=False 로 강등.
+
+        **삭제가 아니라 강등** — as-of(시점) 질의가 옛 시행본을 여전히 찾도록 ELI 버전을 보존하되,
+        현행(is_current=True) 검색에서 옛 본문이 새 본문과 함께 노출되는 stale-current 를 막는다.
+        """
+        ...
+
 
 @runtime_checkable
 class Reranker(Protocol):

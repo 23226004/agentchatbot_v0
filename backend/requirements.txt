@@ -1,0 +1,14 @@
+# backend 설치 매니페스트 — `cd backend && uv pip install -r requirements.txt` 로 backend_app + 형제 전부.
+#
+# PyPI 런타임 의존(fastapi/uvicorn/psycopg/langgraph-checkpoint-postgres/requests)은
+# pyproject.toml [project.dependencies] 에 선언 → 아래 `-e .` 가 끌어온다(여기 중복 핀 두지 않음).
+#
+# 형제 패키지(사내 GraphRAG, PyPI 인덱스에 없음 → editable). backend_app 이 실제 import:
+#   legal_core   — services/retrieval.py 가 **모듈 로드 시(eager)** `from legal_core.retrieval import …`
+#   legal_infra  — core/container.py 가 lazy(`build_retrieval_service`/`build_embedding` 첫 사용 시)
+#   agent_app    — api/app.py 가 lazy(production factory 의 첫 ReActAgent 생성 시)
+# ※ 셋 다 없으면 backend 단독 설치는 import-time/첫-요청에 ModuleNotFoundError. 반드시 함께 설치.
+-e ../legal_core
+-e ../legal_infra
+-e ../agent
+-e .

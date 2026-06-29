@@ -284,7 +284,7 @@ report = {base_id, edges, children}
 5. [ ] RetrievalService + 단위테스트(페이크)
 6. [ ] **E2E(1차)**: "거실 정의" API본문 GraphRAG 인용 (위임확장·as-of 없음)
 7. [ ] `delegation_build`+`inspector`: 위임그래프+검증게이트(리포트 모호0) → expand에 delegatesTo 활성화
-8. [ ] RunService(updates→SSE) + agent 도구를 RetrievalService로 교체(FR-12)
+8. [x] RunService(updates→SSE) + agent 도구를 RetrievalService로 교체(FR-12) — **슬라이스8 구현**: RunService=인메모리 SSE 스켈레톤(영속·seq DB·approval 재개는 conversation-store Do로 위임), RetrievalService를 legal_core로 이전(§9.1)·공유 DI는 legal_infra, 도구 `content_and_artifact`+system prompt `[[cite]]`+cite 위조검증·면책·버전고지. 계약테스트 통과(legal_core+backend 28건)
 9. [ ] (슬라이스6) 다버전 시드 + as-of
 
 ---

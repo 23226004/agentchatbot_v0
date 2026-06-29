@@ -99,6 +99,9 @@ def ingest_law(name: str, *, client: LawGoClient, graph, vector, embedding) -> d
     vector.ensure_collection()
     vectors = embedding.embed([c.text for c in chunks])
     vector.upsert(chunks, vectors)
+    # 개정 반영: 이 법령의 다른(옛) 시행본 point 를 is_current=False 로 강등(stale-current 방지, 교차검증).
+    # Fuseki 는 named graph PUT 으로 자동 교체되나 Qdrant 는 upsert 만이라 옛 시행본이 잔존했다.
+    vector.supersede(meta.law_id, _iso(meta.eff_date))
 
     return {
         "statute": meta.statute, "law_id": meta.law_id, "eff_date": _iso(meta.eff_date),

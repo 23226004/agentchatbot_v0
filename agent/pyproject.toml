@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent_app"
+version = "0.1.0"
+description = "LangGraph ReAct 법령 에이전트 — ReActAgent 레지스트리·도구(search_legal)·CLI. backend 가 import 한다."
+requires-python = ">=3.12"
+# 아래는 **PyPI 의존만** 자급자족(`pip install -e agent` 가 langgraph 등은 끌어옴 — deps=[] 풋건 방지).
+# ⚠ 그러나 agent_app.core/tools 는 **import-time 에 legal_core·legal_infra 를 하드 의존**(우아한
+# degradation 없음)이라, 이 둘 없이는 `import agent_app.core.agent` 자체가 실패한다. 둘은 PyPI 인덱스에
+# 없어 여기 선언 불가 → editable 로 **반드시 함께** 설치(requirements.txt 의 `-e ../legal_core
+# -e ../legal_infra`). 즉 wheel 단독 배포는 비대상.
+# 버전 제약: floor=검증된 메이저(코드가 1.x API 로 작성됨 — 0.2/0.3 floor 는 거짓이었음),
+# cap=다음 메이저(특히 langgraph 2.0 은 `langgraph.prebuilt.create_react_agent` 를 제거 →
+# 캡 없으면 2.0 이 silent 설치돼 부팅 깨짐). 검증 기준: 1.2.6/1.4.8/1.3.3 (테스트 230 green).
+dependencies = [
+    "langgraph>=1.2,<2",
+    # MemorySaver/BaseCheckpointSaver 를 직접 import(memory/short_term·graph/react_graph)하므로
+    # 제공 패키지를 명시 선언(전이의존에 맡기지 않음 — backend 가 PostgresSaver 용 checkpoint-postgres 를
+    # 명시한 것과 대칭). 현재 4.1.1.
+    "langgraph-checkpoint>=4.1,<5",
+    "langchain-openai>=1.3,<2",
+    "langchain-core>=1.4.7,<2",  # langchain-openai 1.3 이 요구하는 실하한(1.4.7)에 맞춰 정직화
+    "python-dotenv>=1.0,<2",
+]
+
+# LLM 관측(Langfuse) — **선택적**. core/observability.py 가 env-gate+import-guard 라 미설치/미설정 시 no-op.
+# langfuse 의 langchain 통합이 full `langchain` 패키지 존재를 요구(v3 는 그 후 langchain-core 사용).
+[project.optional-dependencies]
+observability = [
+    "langfuse>=3,<4",
+    "langchain>=1,<2",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["agent_app*"]

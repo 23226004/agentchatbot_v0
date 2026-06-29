@@ -22,6 +22,7 @@ from legal_core.schemas import (
     Hit,
     LawRef,
 )
+from legal_core.retrieval import RetrievalService, format_for_llm
 
 __all__ = [
     "ids",
@@ -36,4 +37,6 @@ __all__ = [
     "GraphRepository",
     "EXPAND_PREDICATES_V1",
     "EXPAND_PREDICATES_FULL",
+    "RetrievalService",
+    "format_for_llm",
 ]

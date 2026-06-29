@@ -66,3 +66,23 @@ def test_search_dense_only_no_prefetch(monkeypatch):
     v.search(DenseSparse(dense=[0.1, 0.2], sparse={}), k=8)
     kw = v.client.qkw
     assert "prefetch" not in kw and kw.get("using") == "dense"    # dense 폴백
+
+
+def test_supersede_demotes_other_eff_dates(monkeypatch):
+    """supersede: keep_eff_date 가 아닌 시행본만 is_current=False 강등(삭제 아님 — as-of 보존)."""
+    calls = {}
+
+    class _C(_FakeClient):
+        def set_payload(self, collection, payload, points, wait=False):
+            calls["payload"] = payload
+            calls["filter"] = points
+
+    v = vq.QdrantVector.__new__(vq.QdrantVector)
+    v.client, v.collection, v.dim = _C(), "law_articles", 1024
+    v.supersede("001823", "2026-02-27")
+
+    assert calls["payload"] == {"is_current": False}            # 강등(삭제 아님)
+    f = calls["filter"]
+    # resource_id == 대상 (must), eff_date == keep 는 제외 (must_not)
+    assert f.must[0].key == "resource_id" and f.must[0].match.value == "001823"
+    assert f.must_not[0].key == "eff_date" and f.must_not[0].match.value == "2026-02-27"

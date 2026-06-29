@@ -9,8 +9,10 @@ from __future__ import annotations
 from legal_infra.embedding_flag import LocalFlagEmbedding
 from legal_infra.embedding_remote import RemoteEmbedding
 from legal_infra.graph_fuseki import FusekiGraph
+from legal_infra.provider import build_embedding, build_retrieval_service
 from legal_infra.reranker_flag import LocalFlagReranker
 from legal_infra.vector_qdrant import QdrantVector
 
 __all__ = ["RemoteEmbedding", "LocalFlagEmbedding", "LocalFlagReranker",
-           "QdrantVector", "FusekiGraph"]
+           "QdrantVector", "FusekiGraph",
+           "build_embedding", "build_retrieval_service"]

@@ -1,4 +1,12 @@
-langgraph>=0.2.60
-langchain-openai>=0.2.0
-langchain-core>=0.3.0
-python-dotenv>=1.0.0
+# agent 설치 매니페스트 — `cd agent && uv pip install -r requirements.txt` 로 agent_app + 형제 전부.
+#
+# PyPI 런타임 의존(langgraph/langchain-openai/langchain-core/python-dotenv)의 **버전 제약은
+# pyproject.toml [project.dependencies] 단일 출처** → 아래 `-e .` 가 끌어온다(여기 중복 핀 두지 않음
+# — 과거 requirements 와 pyproject 가 따로 놀아 floor 가 어긋났던 드리프트 방지).
+#
+# 형제 패키지(legal_core·legal_infra, PyPI 인덱스 부재, editable). agent_app.core/tools 가
+# **import-time 에 eager 의존** → 반드시 함께 설치(둘 없이는 `import agent_app.core.agent` 실패).
+-e ../legal_core
+-e ../legal_infra
+# [observability] extra: Langfuse LLM 관측(langfuse+langchain). env-gate 라 미설정 시 no-op(무해).
+-e .[observability]

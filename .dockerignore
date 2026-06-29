@@ -1,0 +1,31 @@
+# Docker 빌드 컨텍스트에서 제외 — 이미지 비대화 방지 + ★비밀(.env) 유입 차단(Zero-Trust).
+# (Dockerfile 이 COPY 하는 건 legal_core/ legal_infra/ agent/ backend/ 뿐이지만,
+#  그 안의 .env·.venv 가 레이어에 굽히지 않도록 여기서 원천 배제한다.)
+
+# 비밀 — 절대 이미지에 굽지 않음(런타임에 --env-file/environment 로만 주입)
+**/.env
+**/.env.*
+!**/.env.example
+
+# 가상환경·캐시·바이트코드
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+
+# 앱과 무관한 트리(컨텍스트만 키움)
+frontend/
+docs/
+scratchpad/
+db-admin/
+deploy/
+!deploy/requirements.lock
+.git/
+__pycache__/
+# database/ 는 배제하지 않음 — database/migrations/*.sql 을 이미지가 동봉(부팅 마이그레이션). 총 44K 로 작음.
+
+# 테스트·로컬 산출물(런타임 불요)
+**/tests/
+*.log
