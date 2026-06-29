@@ -44,4 +44,3 @@ scratchpad/
 # SvelteKit 생성물
 .svelte-kit/
 frontend/build/
-agentchatbot_v0/
