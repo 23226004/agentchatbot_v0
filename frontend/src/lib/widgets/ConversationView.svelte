@@ -66,12 +66,22 @@
   .conv { display: flex; flex-direction: column; gap: 14px; padding: 16px; }
   .row { display: flex; gap: 10px; align-items: flex-start; }
   .fork {
-    flex: 0 0 auto; align-self: center; opacity: 0; transition: opacity 0.1s;
+    flex: 0 0 auto; align-self: center; opacity: 0; transition: opacity 0.1s; box-sizing: border-box;
     border: 0.5px solid var(--border-strong); background: var(--bg); color: var(--text-faint);
     border-radius: var(--r-sm); padding: 2px 7px; font-size: 13px; cursor: pointer; line-height: 1;
   }
-  .row:hover .fork { opacity: 1; }
+  /* 호버(데스크톱) + 키보드 포커스(접근성)서 노출 */
+  .row:hover .fork, .row:focus-within .fork { opacity: 1; }
   .fork:hover { background: var(--bg-soft); color: var(--text-soft); }
+  /* 반응형 M6: 모바일은 호버가 없으므로 분기 버튼 상시 노출 + 터치 타깃 ≥44px(P5). */
+  @media (max-width: 760px) {
+    .fork {
+      opacity: 1; min-height: 44px; padding: 0 12px;
+      display: inline-flex; align-items: center; font-size: 14px;
+    }
+    /* 44px fork 가 짧은 1줄 버블 행을 44px 로 키울 때 아바타/버블이 위로 뜨는 정렬 깨짐 방지(M6-#4). */
+    .row.user { align-items: center; }
+  }
   .avatar {
     flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;

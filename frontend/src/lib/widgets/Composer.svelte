@@ -60,4 +60,10 @@
   button:disabled { opacity: 0.5; cursor: default; }
   button.stop { color: #d9534f; border-color: #d9534f; font-size: 12px; }
   button.stop:hover { background: #d9534f; color: #fff; }
+
+  /* 반응형 M6: 모바일 입력 16px — iOS 가 16px 미만 input 포커스 시 자동 줌인하는 것 방지(R9/P8). */
+  @media (max-width: 760px) {
+    textarea { font-size: 16px; min-height: 44px; } /* 44px 버튼과 높이 정렬(M6-#7) */
+    button { width: 44px; height: 44px; } /* 터치 타깃 ≥44px(전송/중지) */
+  }
 </style>
