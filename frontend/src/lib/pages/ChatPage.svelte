@@ -64,6 +64,7 @@
   }
 
   let busy = $state(false);
+  let answered = $state(false); // 답변/에러 도착 후 인디케이터 즉시 숨김(겹침 방지, 교차검증 B-F1)
   let interrupting = $state(false); // 중지 진행 중 — 협조취소 종결(run.done/error)을 '실패'로 표시 안 함
   let summaries = $state<Summary[]>([]); // 요약 목록
   let showSummary = $state(false); // 요약 패널 표시
@@ -259,7 +260,7 @@
             if (ev.model) runModel = ev.model; // 실제 라우팅된 모델(선택값과 일치하는지 확인용)
             break;
           case 'tool.call':
-            status = `${ev.name} 실행 중…`;
+            status = ev.name === 'search_legal' ? '법령 검색 중…' : `${ev.name} 실행 중…`;
             if (planAnalyzeId) plan.set(planAnalyzeId, 'done');
             planToolIds.set(ev.id, plan.add(`도구 · ${ev.name}`, 'active'));
             toolIds.set(ev.id, transcript.toolCall(ev.name, ev.args));
@@ -268,6 +269,7 @@
             const pid = planToolIds.get(ev.id);
             if (pid) plan.set(pid, 'done');
             transcript.toolResult(toolIds.get(ev.id) ?? '', ev.content);
+            status = '답변 작성 중…'; // 도구 결과 후 LLM 최종답변 생성 단계 표시
             break;
           }
           case 'citation.added':
@@ -277,6 +279,7 @@
             plan.finishAll();
             plan.add('답변 작성', 'done');
             transcript.commit(transcript.startAgent(), ev.text);
+            answered = true; // 답변 도착 — 인디케이터 숨김
             break;
           case 'approval.requested':
             awaiting = { detail: ev.detail ?? '도구 실행 승인이 필요합니다.', tools: ev.tools ?? [] };
@@ -287,6 +290,7 @@
             // 중지로 인한 종료는 실패 아님 — 가짜 "연결 끊김" 에러를 답변으로 커밋하지 않음(교차검증 B#6).
             if (!interrupting)
               transcript.commit(transcript.startAgent(), ev.message ?? '응답을 완성하지 못했습니다. 다시 시도해 주세요.');
+            answered = true;
             break;
           case 'run.done':
             plan.finishAll(); // 중지/완료 모두 진행 펄스 종료(완료는 message.completed 가 이미 호출 — 멱등, 교차검증 C#1)
@@ -306,7 +310,8 @@
   }
 
   async function onsend(text: string) {
-    if (busy || awaiting) return;
+    if (busy || awaiting || summaryBusy) return; // 요약 중 전송 차단(status race, 교차검증 A2)
+    answered = false;
     transcript.addUser(text);
     plan.reset();
     planAnalyzeId = plan.add('질문 이해', 'active');
@@ -333,6 +338,7 @@
     awaiting = null;
     busy = true;
     status = approve ? '계속…' : '거절됨';
+    answered = false;
     await consume(client.approve(approve, approved));
   }
 </script>
@@ -379,6 +385,13 @@
       {/if}
       <main bind:this={scroller}>
         <ConversationView items={transcript.items} citations={citations.items} onfork={forkThreadHandler} />
+        {#if busy && !awaiting && !answered}
+          <div class="thinking" aria-live="polite">
+            <span class="t-avatar" aria-hidden="true">AI</span>
+            <span class="t-label">{status || '생각 중'}</span>
+            <span class="t-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          </div>
+        {/if}
       </main>
       {#if awaiting}
         <ApprovalBar
@@ -415,7 +428,19 @@
     font-size: 11.5px; color: var(--text-soft);
     border: 0.5px solid var(--border); border-radius: var(--r-md); padding: 2px 8px;
   }
-  .theme {
+.thinking { display: flex; align-items: center; gap: 10px; padding: 2px 16px 16px; }
+  .thinking .t-avatar {
+    flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; background: var(--accent-soft); color: var(--accent);
+  }
+  .thinking .t-label { font-size: 13px; color: var(--text-soft); }
+  .thinking .t-dots { display: inline-flex; gap: 3px; }
+  .thinking .t-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--text-faint); animation: blink 1.2s infinite both; }
+  .thinking .t-dots i:nth-child(2) { animation-delay: 0.2s; }
+  .thinking .t-dots i:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
+    .theme {
     font-size: 11.5px; color: var(--text-soft); cursor: pointer;
     border: 0.5px solid var(--border); border-radius: var(--r-md); padding: 3px 9px; background: var(--bg);
   }
