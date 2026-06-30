@@ -93,6 +93,33 @@
   function closeNav(): void {
     if (navOpen) history.back(); // shallow-routed 항목 pop → page.state 복원 → navOpen=false (뒤로가기와 동일 경로)
   }
+
+  // 반응형 M5: 모바일 헤더 응축 — 요약·테마·검토는 ⋮ 더보기 메뉴로(모델 칩·mismatch 경고는 상시, R4).
+  let moreOpen = $state(false);
+  let moreEl = $state<HTMLElement | null>(null);
+  let moreBtnEl = $state<HTMLButtonElement | null>(null); // 닫힘 시 포커스 복귀 대상(M5-A D3)
+  function closeMore(): void {
+    moreOpen = false;
+  }
+  // 메뉴 열림 동안 바깥클릭/Esc 로 닫기. Svelte 이펙트는 비동기 실행이라 여는 클릭 이후에 리스너가
+  // 붙어 즉시 닫힘이 없음(+토글버튼은 moreEl 안이라 contains 가드로도 안전).
+  $effect(() => {
+    if (!moreOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (moreEl && !moreEl.contains(e.target as Node)) moreOpen = false;
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') moreOpen = false;
+    };
+    document.addEventListener('click', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('click', onDoc);
+      document.removeEventListener('keydown', onKey);
+      // 닫힐 때 포커스를 ⋮ 로 복귀 — 메뉴 항목 언마운트로 포커스가 body 로 유실되는 것 방지(보이는 경우만).
+      if (moreBtnEl?.offsetParent) moreBtnEl.focus();
+    };
+  });
   // 도구 이벤트 id → 트랜스크립트 항목 id. 같은 턴(send→approve) 동안 유지(승인 후 tool.result 매칭).
   let toolIds = new Map<string, string>();
   // 계획 스텝 추적(턴 스코프): 분석 스텝 id + 도구이벤트 id → 계획 스텝 id.
@@ -438,15 +465,62 @@
     <div class="spacer"></div>
     {#if status}<span class="status">{status}</span>{/if}
     {#if runModel}
-      <span class="ran" class:mismatch={!!models.activeId && runModel !== models.activeId} title="직전 응답에 실제 사용된 모델">
+      <!-- 실제 사용 모델 — mismatch(선택≠실행) 경고는 모바일서도 절대 숨김 금지(R4). 일치 시엔 모바일 숨김. -->
+      <span
+        class="ran"
+        class:mismatch={!!models.activeId && runModel !== models.activeId}
+        title="직전 응답에 실제 사용된 모델"
+      >
         실행: {runModel}
       </span>
     {/if}
+    <!-- 모델 칩은 상시 노출(매 턴 결정·신뢰 신호, R4) -->
     <ModelSelector models={models.models} activeId={models.activeId} onselect={selectModel} />
-    <span class="chip">검토 0</span>
-    <button class="hbtn" onclick={doSummarize} disabled={summaryBusy || !!awaiting} title="대화 요약">요약</button>
-    <button class="theme" onclick={toggleTheme} aria-label="테마 전환">{theme === 'light' ? '다크' : '라이트'}</button>
+    <!-- 데스크톱: 인라인 / 모바일: ⋮ 더보기로 이동 -->
+    <span class="chip desktop-only">검토 0</span>
+    <button class="hbtn desktop-only" onclick={doSummarize} disabled={summaryBusy || !!awaiting} title="대화 요약">요약</button>
+    <button class="theme desktop-only" onclick={toggleTheme} aria-label="테마 전환">{theme === 'light' ? '다크' : '라이트'}</button>
+    <!-- 모바일 더보기 메뉴(요약·테마·검토) -->
+    <!-- disclosure 패턴(메뉴 위젯 아님): role=menu 는 화살표키 내비를 약속하므로 부적합 → 단순 토글 +
+         자연 Tab + Esc + 바깥클릭 + 닫힘 시 ⋮ 로 포커스 복귀(교차검증 M5-A D1/D3). -->
+    <div class="more mobile-only" bind:this={moreEl}>
+      <button
+        class="more-btn"
+        bind:this={moreBtnEl}
+        onclick={() => (moreOpen = !moreOpen)}
+        aria-haspopup="true"
+        aria-expanded={moreOpen}
+        aria-label="더보기"
+      >⋮</button>
+      {#if moreOpen}
+        <div class="more-menu">
+          <button
+            class="more-item"
+            onclick={() => {
+              closeMore();
+              void doSummarize();
+            }}
+            disabled={summaryBusy || !!awaiting}
+          >대화 요약</button>
+          <button
+            class="more-item"
+            onclick={() => {
+              closeMore();
+              toggleTheme();
+            }}
+          >{theme === 'light' ? '다크 모드' : '라이트 모드'}</button>
+          <span class="more-item static" aria-hidden="true">검토 0</span>
+        </div>
+      {/if}
+    </div>
   </header>
+
+  <!-- status 토스트(모바일) — 시각 전용(aria-hidden): 진행 상태는 thinking 인디케이터(aria-live)·승인은
+       alertdialog·에러는 transcript 가 이미 announce → 토스트가 또 live 면 이중 announce/churn(M5-A D5).
+       승인 시트가 같은 상태를 덮으므로 awaiting 중엔 미표시(M5-C D5). -->
+  {#if isNarrow && status && !awaiting}
+    <div class="status-toast" aria-hidden="true">{status}</div>
+  {/if}
 
   <div class="body" class:nav-open={navOpen}>
     <AgentRail agents={agents.agents} activeId={agents.activeId} onselect={(id: string) => agents.select(id)} />
@@ -513,11 +587,12 @@
 <style>
   .shell { display: grid; grid-template-rows: auto 1fr; height: 100vh; height: 100dvh; background: var(--bg); }
   header {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;
     padding: max(9px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 9px max(14px, env(safe-area-inset-left));
     border-bottom: 0.5px solid var(--border);
   }
-  .brand { font-weight: 500; }
+  /* 좁은 화면서 brand 가 줄어들어 ⋮ 가 화면 밖으로 밀리지 않게(M5-C D2) */
+  .brand { font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .active { font-size: 13px; color: var(--accent); }
   .spacer { flex: 1; }
   .status { font-size: 12px; color: var(--accent); margin-right: 4px; }
@@ -530,6 +605,39 @@
   .chip {
     font-size: 11.5px; color: var(--text-soft);
     border: 0.5px solid var(--border); border-radius: var(--r-md); padding: 2px 8px;
+  }
+  /* ── 반응형 M5: 헤더 응축 — ⋮ 더보기 메뉴 + status 토스트 ── */
+  .mobile-only { display: none; } /* 데스크톱 기본 숨김(≤760서 노출) */
+  .more { position: relative; flex: 0 0 auto; } /* ⋮ 는 절대 수축/탈락 안 함(M5-C D3) */
+  .more-btn {
+    width: 32px; height: 32px; border-radius: var(--r-md);
+    border: 0.5px solid var(--border); background: var(--bg); color: var(--text);
+    cursor: pointer; font-size: 16px; line-height: 1;
+  }
+  .more-btn:hover { background: var(--bg-soft); }
+  .more-menu {
+    position: absolute; right: 0; top: calc(100% + 6px); z-index: 70;
+    display: flex; flex-direction: column; min-width: 168px;
+    background: var(--bg); border: 0.5px solid var(--border-strong);
+    border-radius: var(--r-md); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+    padding: 4px; gap: 1px;
+  }
+  .more-item {
+    text-align: left; padding: 11px 12px; min-height: 44px; font-size: 14px;
+    border: none; background: transparent; color: var(--text); cursor: pointer;
+    border-radius: var(--r-sm);
+  }
+  .more-item:hover:not(:disabled):not(.static) { background: var(--bg-soft); }
+  .more-item:disabled { opacity: 0.5; cursor: default; }
+  .more-item.static { color: var(--text-soft); cursor: default; }
+  .status-toast {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    top: calc(env(safe-area-inset-top) + 54px); z-index: 40;
+    max-width: 90vw; padding: 5px 13px; border-radius: 999px;
+    /* 헤더(패딩 max(9,sat)+내용~30+9 ≈ sat+48) 아래로 — 비노치(sat=0)서도 겹치지 않게 +54px 여유(M5-C D4) */
+    background: var(--text); color: var(--bg); font-size: 12px; line-height: 1.4;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
   }
 .thinking { display: flex; align-items: center; gap: 10px; padding: 2px 16px 16px; }
   .thinking .t-avatar {
@@ -587,6 +695,13 @@
   }
   @media (max-width: 760px) {
     .hamburger { display: inline-flex; }
+    /* 헤더 응축(M5/R4): 요약·테마·검토는 ⋮ 로, active 라벨/인라인 status 는 숨김(status 는 토스트로 대체). */
+    .desktop-only { display: none; }
+    .mobile-only { display: block; } /* revert(UA 기본 의존) 대신 명시(M5-C D1) */
+    .active { display: none; }
+    .status { display: none; }
+    .ran:not(.mismatch) { display: none; } /* mismatch 경고만 상시 — 일치 시 숨김(R4) */
+    .ran.mismatch { max-width: 110px; } /* 좁은 화면서 경고가 ⋮ 를 밀지 않게(M5-C D2) */
     /* 본문 한 칸 — 레일/태스크 숨김(R5), 대화목록은 오프캔버스라 그리드 트랙 미점유. */
     .body { grid-template-columns: minmax(0, 1fr); }
     .body :global(.task), .body :global(.rail) { display: none; }
