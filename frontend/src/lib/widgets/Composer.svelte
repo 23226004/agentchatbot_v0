@@ -42,7 +42,8 @@
 <style>
   .composer {
     display: flex; gap: 8px; align-items: flex-end;
-    padding: 10px 12px; border-top: 0.5px solid var(--border); background: var(--bg);
+    padding: 10px max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    border-top: 0.5px solid var(--border); background: var(--bg);
   }
   textarea {
     flex: 1; resize: none; border: 0.5px solid var(--border-strong);

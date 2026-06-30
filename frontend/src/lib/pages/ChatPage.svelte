@@ -417,10 +417,11 @@
 </div>
 
 <style>
-  .shell { display: grid; grid-template-rows: auto 1fr; height: 100vh; background: var(--bg); }
+  .shell { display: grid; grid-template-rows: auto 1fr; height: 100vh; height: 100dvh; background: var(--bg); }
   header {
     display: flex; align-items: center; gap: 8px;
-    padding: 9px 14px; border-bottom: 0.5px solid var(--border);
+    padding: max(9px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 9px max(14px, env(safe-area-inset-left));
+    border-bottom: 0.5px solid var(--border);
   }
   .brand { font-weight: 500; }
   .active { font-size: 13px; color: var(--accent); }
@@ -448,6 +449,19 @@
   .thinking .t-dots i:nth-child(2) { animation-delay: 0.2s; }
   .thinking .t-dots i:nth-child(3) { animation-delay: 0.4s; }
   @keyframes blink { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
+  .summary-panel {
+    margin: 10px 12px 0; border: 0.5px solid var(--border-strong); border-radius: var(--r-md);
+    background: var(--bg-soft); max-height: 30vh; overflow-y: auto; font-size: 12.5px;
+  }
+  .sp-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 10px; border-bottom: 0.5px solid var(--border); color: var(--text-soft); font-weight: 500;
+    position: sticky; top: 0; background: var(--bg-soft);
+  }
+  .sp-close { border: none; background: transparent; cursor: pointer; color: var(--text-faint); font-size: 13px; line-height: 1; }
+  .sp-close:hover { color: var(--text); }
+  .sp-item { padding: 8px 10px; white-space: pre-wrap; line-height: 1.6; color: var(--text); border-top: 0.5px solid var(--border); overflow-wrap: anywhere; }
+  .sp-item:first-of-type { border-top: none; }
     .theme {
     font-size: 11.5px; color: var(--text-soft); cursor: pointer;
     border: 0.5px solid var(--border); border-radius: var(--r-md); padding: 3px 9px; background: var(--bg);
