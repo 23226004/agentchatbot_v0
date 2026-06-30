@@ -1,5 +1,7 @@
 <script lang="ts">
   import { tick, onMount } from 'svelte';
+  import { pushState } from '$app/navigation';
+  import { page } from '$app/state';
   import AgentRail from '$lib/widgets/AgentRail.svelte';
   import ThreadSidebar from '$lib/widgets/ThreadSidebar.svelte';
   import ConversationView from '$lib/widgets/ConversationView.svelte';
@@ -78,6 +80,18 @@
   } | null>(null);
   let scroller = $state<HTMLElement | null>(null);
   let theme = $state<'light' | 'dark'>('light');
+  // 반응형 M2: 모바일 대화목록 드로어.
+  // 열림 상태의 단일 진실원천 = history(SvelteKit shallow routing). raw history.pushState 는 SvelteKit
+  // 라우터의 내부 인덱스를 덮어써 뒤로가기 시 전체 리로드를 유발 → $app/navigation 의 pushState 사용(교차검증 B).
+  let navOpen = $derived(!!page.state.navDrawer); // 드로어 열림 = history 에 navDrawer 상태가 실려 있음
+  let isNarrow = $state(false); // ≤760(드로어 모드) — inert/aria/포커스 토글 기준
+  let hamburgerEl = $state<HTMLButtonElement | null>(null); // 닫힘 시 포커스 복귀 대상(R8)
+  function openNav(): void {
+    pushState('', { navDrawer: true }); // history 항목 추가 → 뒤로가기 1번이 닫음(R13)
+  }
+  function closeNav(): void {
+    if (navOpen) history.back(); // shallow-routed 항목 pop → page.state 복원 → navOpen=false (뒤로가기와 동일 경로)
+  }
   // 도구 이벤트 id → 트랜스크립트 항목 id. 같은 턴(send→approve) 동안 유지(승인 후 tool.result 매칭).
   let toolIds = new Map<string, string>();
   // 계획 스텝 추적(턴 스코프): 분석 스텝 id + 도구이벤트 id → 계획 스텝 id.
@@ -137,6 +151,59 @@
     }
     await follow(true);
   }
+
+  // 드로어에서 탭 → 드로어를 먼저 닫고 동작 수행(R14). selectThread/newChat 은 busy·awaiting 시
+  // 조기 반환하므로 함수 진입부가 아니라 이 래퍼에서 닫아야 항상 닫힌다. rename/delete 는 목록 관리
+  // 중이므로 닫지 않는다.
+  function selectThreadNav(id: string): void {
+    closeNav(); // 드로어를 먼저 닫고(R14) — selectThread 는 busy·awaiting 시 조기 반환하므로 래퍼에서 닫음
+    void selectThread(id);
+  }
+  function newChatNav(): void {
+    closeNav();
+    void newChat();
+  }
+
+  // ≤760 진입/이탈 추적 + 와이드 복귀 시 드로어 강제 닫기(R14 — 회전·리사이즈로 데스크톱 폭이 되면
+  // 떠 있던 드로어가 본문을 가리지 않게). 초기 본문은 navOpen 을 읽지 않아(자기참조 재구독 회피),
+  // navOpen 참조는 추적 밖인 change 핸들러에서만.
+  $effect(() => {
+    const mq = window.matchMedia('(max-width: 760px)');
+    isNarrow = mq.matches;
+    const onChange = () => {
+      isNarrow = mq.matches;
+      if (!mq.matches && navOpen) closeNav();
+    };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  });
+
+  // 드로어 열림 동안: Esc 닫기(R13: 하드웨어 뒤로가기는 SvelteKit 라우터가 처리) + 포커스 진입/복귀(R8).
+  $effect(() => {
+    if (!navOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeNav();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    // 포커스를 드로어 안 첫 포커서블로(role=dialog 진입). 셀렉터는 넉넉히(input/textarea/[tabindex] 포함, 교차검증 A5).
+    void tick().then(() =>
+      document
+        .getElementById('thread-drawer')
+        ?.querySelector<HTMLElement>(
+          'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
+        )
+        ?.focus()
+    );
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      // 포커스를 햄버거로 복귀 — 단, 데스크톱 복귀로 닫힌 경우 햄버거가 display:none 이라 focus 가 body 로
+      // 유실됨 → 보이는 경우(offsetParent 존재)에만 복귀(교차검증 A2).
+      if (hamburgerEl?.offsetParent) hamburgerEl.focus();
+    };
+  });
 
   async function selectThread(id: string) {
     if (busy || awaiting || id === threads.activeId) return;
@@ -352,7 +419,16 @@
 </script>
 
 <div class="shell" style={agents.active.accent ? `--accent:${agents.active.accent}` : ''}>
-  <header>
+  <header inert={navOpen || undefined}>
+    <button
+      class="hamburger"
+      bind:this={hamburgerEl}
+      onclick={openNav}
+      aria-label="대화 목록 열기"
+      aria-haspopup="dialog"
+      aria-controls="thread-drawer"
+      aria-expanded={navOpen}
+    >☰</button>
     <span class="brand">업무 에이전트</span>
     <span class="active">· {agents.active.label}</span>
     <div class="spacer"></div>
@@ -368,18 +444,24 @@
     <button class="theme" onclick={toggleTheme} aria-label="테마 전환">{theme === 'light' ? '다크' : '라이트'}</button>
   </header>
 
-  <div class="body">
+  <div class="body" class:nav-open={navOpen}>
     <AgentRail agents={agents.agents} activeId={agents.activeId} onselect={(id: string) => agents.select(id)} />
     <ThreadSidebar
+      id="thread-drawer"
+      dialog={isNarrow}
+      inert={isNarrow && !navOpen}
       threads={threads.threads}
       activeId={threads.activeId}
-      onselect={selectThread}
-      onnew={newChat}
+      onselect={selectThreadNav}
+      onnew={newChatNav}
       onrename={renameThreadHandler}
       ondelete={deleteThreadHandler}
+      onclose={closeNav}
     />
 
-    <section class="center">
+    <!-- 드로어 열림 시 본문은 inert — 포커스가 드로어를 벗어나 백드롭 뒤 본문에 닿지 않게(A1, aria-modal 정직성).
+         레일·태스크는 모바일서 display:none 이라 이미 비포커스. -->
+    <section class="center" inert={navOpen || undefined}>
       {#if showSummary && summaries.length}
         <div class="summary-panel">
           <div class="sp-head">
@@ -414,6 +496,11 @@
 
     <TaskSidebar steps={plan.steps} citations={citations.items} />
   </div>
+
+  <!-- 모바일 드로어 백드롭(R7: .body 그리드 밖이라 트랙 오염 없음). 탭하면 닫힘. -->
+  {#if navOpen}
+    <button class="backdrop" onclick={closeNav} aria-label="대화 목록 닫기" tabindex="-1"></button>
+  {/if}
 </div>
 
 <style>
@@ -468,6 +555,21 @@
   }
   .theme:hover { background: var(--bg-soft); }
 
+  /* 햄버거 — 데스크톱 숨김, 모바일(≤760)서만 노출(대화목록 드로어 토글, M2). */
+  .hamburger {
+    display: none; flex: 0 0 auto; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border: 0.5px solid var(--border-strong);
+    border-radius: var(--r-md); background: var(--bg); color: var(--text);
+    cursor: pointer; font-size: 16px; line-height: 1;
+  }
+  .hamburger:hover { background: var(--bg-soft); }
+  /* 드로어 백드롭 — 데스크톱엔 안 뜨지만(navOpen 리셋) 안전망으로 폭에서도 가림. */
+  .backdrop {
+    position: fixed; inset: 0; z-index: 45; border: none; cursor: pointer;
+    background: rgba(0, 0, 0, 0.42); animation: backdrop-in 0.18s ease;
+  }
+  @keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+
   .body { display: grid; grid-template-columns: 52px 190px minmax(0, 1fr) 300px; min-height: 0; }
   .center { display: flex; flex-direction: column; min-height: 0; border-right: 0.5px solid var(--border); }
   main { flex: 1; overflow-y: auto; }
@@ -477,7 +579,27 @@
     .body :global(.task) { display: none; }
   }
   @media (max-width: 760px) {
-    .body { grid-template-columns: 52px minmax(0, 1fr); }
-    .body :global(.task), .body :global(.threads) { display: none; }
+    .hamburger { display: inline-flex; }
+    /* 본문 한 칸 — 레일/태스크 숨김(R5), 대화목록은 오프캔버스라 그리드 트랙 미점유. */
+    .body { grid-template-columns: minmax(0, 1fr); }
+    .body :global(.task), .body :global(.rail) { display: none; }
+    /* ThreadSidebar → 좌측 오프캔버스 드로어(R2/R7). position:fixed 라 그리드 흐름서 빠짐. */
+    .body :global(.threads) {
+      position: fixed; top: 0; bottom: 0; left: 0; z-index: 50;
+      width: min(82vw, 300px); transform: translateX(-100%);
+      transition: transform 0.22s ease; box-shadow: 2px 0 16px rgba(0, 0, 0, 0.18);
+      /* 노치/홈인디케이터 회피 — 드로어는 top:0/bottom:0 라 헤더 safe-area 를 못 받으므로 직접 적용(C-D1). */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .body.nav-open :global(.threads) { transform: translateX(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .body :global(.threads) { transition: none; }
+    .backdrop { animation: none; }
+  }
+  /* 데스크톱(>760) 복귀 시 떠 있을 수 있는 백드롭 차단(R14 안전망). */
+  @media (min-width: 761px) {
+    .backdrop { display: none; }
   }
 </style>

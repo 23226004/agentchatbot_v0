@@ -9,6 +9,11 @@
     onnew?: () => void;
     onrename?: (id: string, title: string) => void;
     ondelete?: (id: string) => void;
+    // 반응형 M2: 모바일에선 이 사이드바가 오프캔버스 드로어로 동작.
+    id?: string; // aria-controls 타깃 + 열림 시 포커스 진입용
+    inert?: boolean; // 닫힌 드로어는 비활성(off-screen 버튼이 Tab 포커스 잡지 않게, R8)
+    dialog?: boolean; // 드로어(모달) 모드 → role=dialog/aria-modal + 패널 내 닫기 버튼 노출
+    onclose?: () => void; // 드로어 닫기(패널 내 닫기 버튼, A3)
   }
   let {
     threads = [],
@@ -16,7 +21,11 @@
     onselect = () => {},
     onnew = () => {},
     onrename = () => {},
-    ondelete = () => {}
+    ondelete = () => {},
+    id = undefined,
+    inert: inertProp = false,
+    dialog = false,
+    onclose = () => {}
   }: Props = $props();
 
   // 인라인 이름변경 상태(한 번에 하나).
@@ -70,7 +79,18 @@
   }
 </script>
 
-<aside class="threads">
+<aside
+  class="threads"
+  {id}
+  inert={inertProp || undefined}
+  role={dialog ? 'dialog' : undefined}
+  aria-modal={dialog ? 'true' : undefined}
+  aria-label={dialog ? '대화 목록' : undefined}
+>
+  {#if dialog}
+    <!-- 드로어(모달) 모드에서만 — 패널 내 명시적 닫기(키보드/AT 접근 가능한 종결, A3). -->
+    <button class="drawer-close" onclick={onclose} aria-label="대화 목록 닫기">✕ 닫기</button>
+  {/if}
   <button class="new" onclick={onnew}>+ 새 대화</button>
   <div class="list">
     {#each threads as t (t.id)}
@@ -108,7 +128,15 @@
     border: 0.5px solid var(--border-strong); border-radius: var(--r-md); background: var(--bg); color: var(--text-soft); cursor: pointer;
   }
   .new:hover { background: var(--bg-soft); }
-  .list { flex: 1; overflow-y: auto; padding: 0 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+  /* overscroll-behavior 는 실제 스크롤 컨테이너인 .list 에 둬야 효과(드로어 스크롤이 본문으로 전파 차단, C-D2). */
+  .list { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 0 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+  /* 드로어 내 닫기 버튼(모바일 모달 모드 전용) */
+  .drawer-close {
+    margin: 8px 10px 2px; padding: 10px 12px; min-height: 44px; text-align: left;
+    border: 0.5px solid var(--border-strong); border-radius: var(--r-md);
+    background: var(--bg); color: var(--text-soft); cursor: pointer; font-size: 14px;
+  }
+  .drawer-close:hover { background: var(--bg-soft); }
   .item {
     display: flex; align-items: center; gap: 2px;
     border-radius: var(--r-md); padding-right: 4px; min-width: 0;
@@ -138,6 +166,16 @@
   }
   .act:hover { background: var(--bg); color: var(--text-soft); }
   .act.danger:hover { color: #d9534f; }
+  /* 모바일(≤760): 호버가 없으므로 액션을 항상 노출하고 터치 타깃을 ≥44px 로(R12, C-D3/D4). */
+  @media (max-width: 760px) {
+    .actions { opacity: 1; gap: 8px; } /* ✎/🗑 오탭 방지 — 간격 확대(C-D4) */
+    .act {
+      min-width: 44px; min-height: 44px; padding: 10px; font-size: 16px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .new { min-height: 44px; padding: 11px 12px; font-size: 14px; }
+    .t-main { min-height: 44px; padding: 9px; justify-content: center; }
+  }
   .t-edit {
     flex: 1; min-width: 0; margin: 3px 5px;
     font-size: 12.5px; padding: 4px 7px;
