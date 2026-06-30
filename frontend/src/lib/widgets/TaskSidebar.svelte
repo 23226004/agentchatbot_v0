@@ -4,13 +4,40 @@
   import type { Citation } from '$lib/shared/api/contracts';
   import CitationList from '$lib/widgets/CitationList.svelte';
 
-  let { steps = [] as PlanStep[], citations = [] as Citation[] } = $props();
+  interface Props {
+    steps?: PlanStep[];
+    citations?: Citation[];
+    // 반응형 M3: ≤1040 서 우측 오프캔버스 드로어로 동작.
+    id?: string; // aria-controls 타깃 + 열림 시 포커스 진입용
+    inert?: boolean; // 닫힌 드로어 비활성(off-screen 비포커스, R8)
+    dialog?: boolean; // 드로어(모달) 모드 → role=dialog/aria-modal + 패널 내 닫기 버튼
+    onclose?: () => void;
+  }
+  let {
+    steps = [],
+    citations = [],
+    id = undefined,
+    inert: inertProp = false,
+    dialog = false,
+    onclose = () => {}
+  }: Props = $props();
 
   type Tab = 'plan' | 'sources' | 'artifacts';
   let tab = $state<Tab>('plan');
 </script>
 
-<aside class="task">
+<aside
+  class="task"
+  {id}
+  inert={inertProp || undefined}
+  role={dialog ? 'dialog' : undefined}
+  aria-modal={dialog ? 'true' : undefined}
+  aria-label={dialog ? '계획·근거 패널' : undefined}
+>
+  {#if dialog}
+    <!-- 드로어(모달) 모드에서만 — 패널 내 명시적 닫기(키보드/AT 접근 가능, M2/M3). -->
+    <button class="drawer-close" onclick={onclose} aria-label="계획·근거 패널 닫기">✕ 닫기</button>
+  {/if}
   <div class="tabs" role="tablist">
     <button class:on={tab === 'plan'} role="tab" aria-selected={tab === 'plan'} onclick={() => (tab = 'plan')}>계획</button>
     <button class:on={tab === 'sources'} role="tab" aria-selected={tab === 'sources'} onclick={() => (tab = 'sources')}>
@@ -44,6 +71,12 @@
 
 <style>
   .task { display: flex; flex-direction: column; border-left: 0.5px solid var(--border); background: var(--bg); min-height: 0; }
+  .drawer-close {
+    margin: 8px 10px 2px; padding: 10px 12px; min-height: 44px; text-align: left;
+    border: 0.5px solid var(--border-strong); border-radius: var(--r-md);
+    background: var(--bg); color: var(--text-soft); cursor: pointer; font-size: 14px;
+  }
+  .drawer-close:hover { background: var(--bg-soft); }
   .tabs { display: flex; gap: 4px; padding: 10px 10px 8px; border-bottom: 0.5px solid var(--border); }
   .tabs button {
     font-size: 12px; padding: 4px 9px; border-radius: var(--r-md);

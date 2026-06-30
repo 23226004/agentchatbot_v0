@@ -87,12 +87,60 @@
   let isNarrow = $state(false); // ≤760(드로어 모드) — inert/aria/포커스 토글 기준
   let hamburgerEl = $state<HTMLButtonElement | null>(null); // 닫힘 시 포커스 복귀 대상(R8)
   function openNav(): void {
-    if (awaiting) return; // 승인 대기 중엔 드로어를 열지 않음(승인 게이트 우선, M4-D1 방어)
+    if (awaiting || taskOpen) return; // 승인 대기/우측 패널 열림 시 안 엶(상호배제 명시 — inert 타이밍 비의존, M3-A D2)
     pushState('', { navDrawer: true }); // history 항목 추가 → 뒤로가기 1번이 닫음(R13)
   }
   function closeNav(): void {
     if (navOpen) history.back(); // shallow-routed 항목 pop → page.state 복원 → navOpen=false (뒤로가기와 동일 경로)
   }
+
+  // 반응형 M3: 우측 계획·근거 패널(TaskSidebar)을 ≤1040(태블릿+모바일)서 오프캔버스 드로어로(좌측 navDrawer 미러링).
+  let taskOpen = $derived(!!page.state.taskDrawer);
+  let isTabletDown = $state(false); // ≤1040: Task 패널이 드로어 모드(inert/aria/포커스 기준)
+  let taskBtnEl = $state<HTMLButtonElement | null>(null); // 닫힘 시 포커스 복귀 대상
+  function openTask(): void {
+    if (awaiting || navOpen) return; // 승인 대기/좌측 드로어 열림 시 안 엶(상호배제 명시, M3-A D2)
+    pushState('', { taskDrawer: true });
+  }
+  function closeTask(): void {
+    if (taskOpen) history.back();
+  }
+
+  // ≤1040 진입/이탈 추적 + 와이드 복귀 시 task 드로어 강제 닫기(R14, navDrawer 와 동일 원리).
+  $effect(() => {
+    const mq = window.matchMedia('(max-width: 1040px)');
+    isTabletDown = mq.matches;
+    const onChange = () => {
+      isTabletDown = mq.matches;
+      if (!mq.matches && taskOpen) closeTask();
+    };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  });
+
+  // task 드로어 열림 동안: Esc 닫기 + 포커스 진입/복귀(R8). 하드웨어 뒤로가기는 SvelteKit 라우터가 처리.
+  $effect(() => {
+    if (!taskOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeTask();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    void tick().then(() =>
+      document
+        .getElementById('task-drawer')
+        ?.querySelector<HTMLElement>(
+          'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
+        )
+        ?.focus()
+    );
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      if (taskBtnEl?.offsetParent) taskBtnEl.focus();
+    };
+  });
 
   // 반응형 M5: 모바일 헤더 응축 — 요약·테마·검토는 ⋮ 더보기 메뉴로(모델 칩·mismatch 경고는 상시, R4).
   let moreOpen = $state(false);
@@ -380,6 +428,7 @@
             // 드로어가 열린 채 승인이 오면 .center 가 inert → 그 안의 ApprovalBar 버튼까지 inert 되어
             // 승인/거절 불가 교착(교차검증 M4-D1). 승인 게이트가 항상 조작 가능하도록 드로어 강제 닫기.
             if (navOpen) closeNav();
+            if (taskOpen) closeTask(); // 우측 패널도 닫아 승인 시트 노출(M3)
             awaiting = { detail: ev.detail ?? '도구 실행 승인이 필요합니다.', tools: ev.tools ?? [] };
             status = '승인 대기…';
             break;
@@ -450,7 +499,7 @@
 </script>
 
 <div class="shell" style={agents.active.accent ? `--accent:${agents.active.accent}` : ''}>
-  <header inert={navOpen || (!!awaiting && isNarrow) || undefined}>
+  <header inert={navOpen || taskOpen || (!!awaiting && isNarrow) || undefined}>
     <button
       class="hamburger"
       bind:this={hamburgerEl}
@@ -463,6 +512,16 @@
     <span class="brand">업무 에이전트</span>
     <span class="active">· {agents.active.label}</span>
     <div class="spacer"></div>
+    <!-- 계획·근거 패널 토글 — ≤1040(태블릿+모바일)서 우측 드로어로 여닫음. 근거 수 배지로 발견성↑. -->
+    <button
+      class="task-toggle"
+      bind:this={taskBtnEl}
+      onclick={openTask}
+      aria-haspopup="dialog"
+      aria-controls="task-drawer"
+      aria-expanded={taskOpen}
+      aria-label="계획·근거 패널 열기"
+    >근거{#if citations.items.length}<span class="tt-badge">{citations.items.length > 99 ? '99+' : citations.items.length}</span>{/if}</button>
     {#if status}<span class="status">{status}</span>{/if}
     {#if runModel}
       <!-- 실제 사용 모델 — mismatch(선택≠실행) 경고는 모바일서도 절대 숨김 금지(R4). 일치 시엔 모바일 숨김. -->
@@ -522,12 +581,12 @@
     <div class="status-toast" aria-hidden="true">{status}</div>
   {/if}
 
-  <div class="body" class:nav-open={navOpen}>
-    <AgentRail agents={agents.agents} activeId={agents.activeId} onselect={(id: string) => agents.select(id)} />
+  <div class="body" class:nav-open={navOpen} class:task-open={taskOpen}>
+    <AgentRail agents={agents.agents} activeId={agents.activeId} onselect={(id: string) => agents.select(id)} inert={taskOpen} />
     <ThreadSidebar
       id="thread-drawer"
       dialog={isNarrow}
-      inert={isNarrow && !navOpen}
+      inert={(isNarrow && !navOpen) || taskOpen}
       threads={threads.threads}
       activeId={threads.activeId}
       onselect={selectThreadNav}
@@ -537,9 +596,10 @@
       onclose={closeNav}
     />
 
-    <!-- 드로어 열림 시 본문은 inert — 포커스가 드로어를 벗어나 백드롭 뒤 본문에 닿지 않게(A1, aria-modal 정직성).
-         레일·태스크는 모바일서 display:none 이라 이미 비포커스. -->
-    <section class="center" inert={navOpen || undefined}>
+    <!-- 좌/우 드로어 열림 시 본문은 inert — 포커스가 드로어를 벗어나 백드롭 뒤 본문에 닿지 않게(A1, aria-modal 정직성).
+         단 awaiting 시엔 절대 inert 아님 — closeNav/closeTask 의 history.back 은 async 라 pop 전 1프레임 동안
+         taskOpen/navOpen 이 남아 .center(→ 그 안 ApprovalBar) 가 inert 되는 M4-D1 교착 재현 방지(M3-A D3). -->
+    <section class="center" inert={((navOpen || taskOpen) && !awaiting) || undefined}>
       {#if showSummary && summaries.length}
         <!-- 승인 시트(모바일 모달) 동안 요약 패널도 inert — sp-close 가 scrim 뒤로 새지 않게(M4-D2). -->
         <div class="summary-panel" inert={(!!awaiting && isNarrow) || undefined}>
@@ -575,12 +635,22 @@
       <Composer {onsend} busy={busy || !!awaiting} stoppable={busy && !awaiting} onstop={stop} />
     </section>
 
-    <TaskSidebar steps={plan.steps} citations={citations.items} />
+    <TaskSidebar
+      id="task-drawer"
+      dialog={isTabletDown}
+      inert={isTabletDown && !taskOpen}
+      onclose={closeTask}
+      steps={plan.steps}
+      citations={citations.items}
+    />
   </div>
 
-  <!-- 모바일 드로어 백드롭(R7: .body 그리드 밖이라 트랙 오염 없음). 탭하면 닫힘. -->
+  <!-- 드로어 백드롭(R7: .body 그리드 밖이라 트랙 오염 없음). 탭하면 닫힘. 좌(nav)·우(task) 공용 스타일. -->
   {#if navOpen}
     <button class="backdrop" onclick={closeNav} aria-label="대화 목록 닫기" tabindex="-1"></button>
+  {/if}
+  {#if taskOpen}
+    <button class="backdrop" onclick={closeTask} aria-label="계획·근거 패널 닫기" tabindex="-1"></button>
   {/if}
 </div>
 
@@ -685,13 +755,37 @@
   }
   @keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
 
+  /* 계획·근거 패널 토글 — 데스크톱(>1040)은 패널이 상시 컬럼이라 숨김, ≤1040 서만 노출(M3) */
+  .task-toggle {
+    display: none; align-items: center; gap: 4px; flex: 0 0 auto;
+    height: 32px; padding: 0 10px; border-radius: var(--r-md);
+    border: 0.5px solid var(--border); background: var(--bg); color: var(--text-soft);
+    cursor: pointer; font-size: 12px; line-height: 1;
+  }
+  .task-toggle:hover { background: var(--bg-soft); }
+  .tt-badge {
+    min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--accent); color: #fff; font-size: 10px; line-height: 1;
+  }
+
   .body { display: grid; grid-template-columns: 52px 190px minmax(0, 1fr) 300px; min-height: 0; }
   .center { display: flex; flex-direction: column; min-height: 0; border-right: 0.5px solid var(--border); }
   main { flex: 1; overflow-y: auto; }
 
   @media (max-width: 1040px) {
     .body { grid-template-columns: 52px 190px minmax(0, 1fr); }
-    .body :global(.task) { display: none; }
+    .task-toggle { display: inline-flex; } /* ≤1040: 패널 토글 노출 */
+    /* TaskSidebar → 우측 오프캔버스 드로어(M3). position:fixed 라 그리드 트랙 미점유(center 풀폭 유지). */
+    .body :global(.task) {
+      position: fixed; top: 0; bottom: 0; right: 0; z-index: 50;
+      width: min(86vw, 320px); transform: translateX(100%);
+      transition: transform 0.22s ease; box-shadow: -2px 0 16px rgba(0, 0, 0, 0.18);
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-right: env(safe-area-inset-right); /* 가로모드 노치 — 우측 드로어는 우측 인셋 직접 적용(M3-C D2) */
+    }
+    .body.task-open :global(.task) { transform: translateX(0); }
   }
   @media (max-width: 760px) {
     .hamburger { display: inline-flex; }
@@ -701,10 +795,10 @@
     .active { display: none; }
     .status { display: none; }
     .ran:not(.mismatch) { display: none; } /* mismatch 경고만 상시 — 일치 시 숨김(R4) */
-    .ran.mismatch { max-width: 110px; } /* 좁은 화면서 경고가 ⋮ 를 밀지 않게(M5-C D2) */
-    /* 본문 한 칸 — 레일/태스크 숨김(R5), 대화목록은 오프캔버스라 그리드 트랙 미점유. */
+    .ran.mismatch { max-width: 90px; } /* 좁은 화면서 경고가 우측 버튼들(근거·⋮)을 밀지 않게(M5-C D2/M3-C D3) */
+    /* 본문 한 칸 — 레일 숨김(R5). 태스크/대화목록은 오프캔버스라 그리드 트랙 미점유. */
     .body { grid-template-columns: minmax(0, 1fr); }
-    .body :global(.task), .body :global(.rail) { display: none; }
+    .body :global(.rail) { display: none; }
     /* ThreadSidebar → 좌측 오프캔버스 드로어(R2/R7). position:fixed 라 그리드 흐름서 빠짐. */
     .body :global(.threads) {
       position: fixed; top: 0; bottom: 0; left: 0; z-index: 50;
@@ -717,7 +811,7 @@
     .body.nav-open :global(.threads) { transform: translateX(0); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .body :global(.threads) { transition: none; }
+    .body :global(.threads), .body :global(.task) { transition: none; } /* 좌·우 드로어 패리티(M3-C D1) */
     .backdrop { animation: none; }
   }
   /* 데스크톱(>760) 복귀 시 떠 있을 수 있는 백드롭 차단(R14 안전망). */

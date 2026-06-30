@@ -2,10 +2,16 @@
   // 프레젠테이션 전용 — 프로파일 데이터/선택은 페이지(AgentStore)가 소유해 props 로 내려준다.
   import type { AgentProfile } from '$lib/entities/agent/types';
 
-  let { agents = [] as AgentProfile[], activeId = '', onselect = (_id: string) => {} } = $props();
+  // inert: 태블릿(≤1040)서 우측 task 드로어가 모달로 열릴 때 배경 레일을 비포커스화(M3 a11y).
+  let {
+    agents = [] as AgentProfile[],
+    activeId = '',
+    onselect = (_id: string) => {},
+    inert: inertProp = false
+  } = $props();
 </script>
 
-<nav class="rail" aria-label="에이전트">
+<nav class="rail" aria-label="에이전트" inert={inertProp || undefined}>
   <button class="new" title="새 작업" aria-label="새 작업">+</button>
   <div class="sep"></div>
   {#each agents as a (a.id)}
