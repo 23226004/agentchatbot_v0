@@ -15,7 +15,10 @@
   }
 
   function onkeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // ★ IME(한글 등) 조합 중 Enter 는 **글자 확정**용이지 전송이 아니다. isComposing(구형: keyCode 229)
+    //   일 때 전송하면, submit 이 입력칸을 비운 뒤 IME 가 마지막 조합글자("줘")를 빈칸에 다시 넣어 남는다.
+    //   → 조합 중엔 무시(글자 확정만). 확정 후 다시 Enter 면 전송.
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
       e.preventDefault();
       submit();
     }
