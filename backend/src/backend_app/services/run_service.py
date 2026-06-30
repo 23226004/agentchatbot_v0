@@ -54,6 +54,12 @@ _ZERO_WIDTH = dict.fromkeys(
 
 # per-tool Stage 2: 선택적 승인에서 거절된 도구셀의 결과(transcript 정본). checkpoint 에는 거절분
 # tool_call 이 제거돼 LLM 이 보지 않음(dual-body) — 이 마커는 UI/감사용 transcript 표시.
+def _title_from(text: str | None) -> str:
+    """대화명용 — 질문의 첫 비어있지 않은 줄을 60자로 자른다(초과 시 …). 빈 입력이면 ''."""
+    line = next((ln.strip() for ln in (text or "").splitlines() if ln.strip()), "")
+    return (line[:60] + "…") if len(line) > 60 else line
+
+
 _REJECTED_TOOL = "사용자가 이 도구 실행을 거부했습니다."
 # 비정상 종결(취소/크래시)로 결과를 못 받은 도구셀 마커 — '영구 pending' 고아 방지(XV D-2).
 _INTERRUPTED_TOOL = "실행이 중단되어 결과를 받지 못했습니다."
@@ -233,6 +239,10 @@ class RunService:
         try:
             mid, _ = self.repo.add_message(thread_id, role="user", run_id=run_id, content_md=message)
             rs.parent_id = mid                          # 턴 루트 — 이후 도구셀·답변을 이 아래로 그룹핑
+            # 첫 질문을 대화명으로 자동 설정(최초 1회만 — set_*_if_empty 가 title IS NULL 일 때만).
+            t = _title_from(message)
+            if t:
+                self.repo.set_thread_title_if_empty(thread_id, t)
         except Exception:  # noqa: BLE001
             _log.exception("run error (user msg persist) run_id=%s thread=%s", run_id, thread_id)
             self.repo.try_transition(run_id, "running", "error", ended=True)
@@ -329,9 +339,19 @@ class RunService:
         checkpoint 를 transcript 정본(조상 prefix ≤ fork_point)으로 시드해 분기 후 대화가 이어진다.
         """
         new_id = self.repo.fork_thread(parent_thread_id, fork_point_message_id)
+        msgs = self.repo.get_thread_messages(new_id)              # 새 thread = 부모 prefix ≤ fork_point
         seed = getattr(self.agent, "fork_state", None)
         if callable(seed):
-            seed(new_id, self.repo.get_thread_messages(new_id))   # 새 thread = 부모 prefix ≤ fork_point
+            seed(new_id, msgs)
+        # 분기 대화명 = 분기점 질문(혼동 방지). 분기점 메시지 우선, 없으면 마지막 user 질문.
+        fp = next((m for m in msgs if str(m.get("id")) == str(fork_point_message_id)), None)
+        src = (fp or {}).get("content_md")
+        if not (src or "").strip():
+            users = [m for m in msgs if m.get("role") == "user" and (m.get("content_md") or "").strip()]
+            src = users[-1].get("content_md") if users else None
+        t = _title_from(src)
+        if t:
+            self.repo.set_thread_title_if_empty(new_id, t)
         return new_id
 
     def _drive(self, stream: Iterator, rs: _Run, thread_id: str) -> Iterator[RunEvent]:

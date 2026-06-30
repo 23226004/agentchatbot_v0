@@ -209,6 +209,59 @@ def test_delete_blocked_while_running_409():
         assert c.delete(f"/threads/{tid}").status_code == 409
 
 
+def _thread_title(c, thread_id):
+    with c.app.state.repo.pool.connection() as conn:
+        row = conn.execute("SELECT title FROM threads WHERE id=%s", (thread_id,)).fetchone()
+        return row[0] if row else None
+
+
+def _first_user_msg_id(c, thread_id):
+    with c.app.state.repo.pool.connection() as conn:
+        row = conn.execute("SELECT id::text FROM messages WHERE thread_id=%s AND role='user' "
+                           "ORDER BY seq LIMIT 1", (thread_id,)).fetchone()
+        return row[0]
+
+
+# ── 첫 질문 자동 대화명(최초 1회) + 분기 제목 ────────────────────────────────
+def test_first_message_sets_title_once():
+    with _client() as c:
+        tid = c.post("/threads", json={}).json()["id"]
+        assert _thread_title(c, tid) is None                      # 생성 직후 무제목
+        c.post(f"/threads/{tid}/messages", json={"message": "건폐율이 무엇인가요?"})
+        _wait_status(c, tid, {"completed"})
+        assert _thread_title(c, tid) == "건폐율이 무엇인가요?"      # 첫 질문이 제목
+        c.post(f"/threads/{tid}/messages", json={"message": "두 번째 질문"})
+        _wait_status(c, tid, {"completed"})
+        assert _thread_title(c, tid) == "건폐율이 무엇인가요?"      # 최초 1회만 — 안 바뀜
+
+
+def test_manual_rename_not_overwritten_by_message():
+    with _client() as c:
+        tid = c.post("/threads", json={"title": "내가 정한 이름"}).json()["id"]
+        c.post(f"/threads/{tid}/messages", json={"message": "질문"})
+        _wait_status(c, tid, {"completed"})
+        assert _thread_title(c, tid) == "내가 정한 이름"           # 수동 제목 보존(IS NULL 아님)
+
+
+def test_long_title_truncated():
+    with _client() as c:
+        tid = c.post("/threads", json={}).json()["id"]
+        c.post(f"/threads/{tid}/messages", json={"message": "가" * 100})
+        _wait_status(c, tid, {"completed"})
+        t = _thread_title(c, tid)
+        assert t.endswith("…") and len(t) == 61                   # 60자 + …
+
+
+def test_fork_title_from_fork_point():
+    with _client() as c:
+        tid = c.post("/threads", json={}).json()["id"]
+        c.post(f"/threads/{tid}/messages", json={"message": "원본 분기점 질문"})
+        _wait_status(c, tid, {"completed"})
+        mid = _first_user_msg_id(c, tid)
+        new_id = c.post(f"/threads/{tid}/fork", json={"fork_point_message_id": mid}).json()["thread_id"]
+        assert _thread_title(c, new_id) == "원본 분기점 질문"       # 분기 제목 = 분기점 질문
+
+
 # ── 홀리스틱 교차검증 수정(A1·A2·C) ─────────────────────────────────────────
 def test_delete_blocked_with_fork_children_409():
     """A1: fork 후손 있는 부모 삭제 차단(참조모델이라 자식 history 소실 방지). leaf 부터 삭제 가능."""

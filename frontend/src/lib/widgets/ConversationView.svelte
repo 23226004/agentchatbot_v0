@@ -9,6 +9,13 @@
     onfork = (_id: string) => {}
   } = $props();
 
+  // 분기 — 실수 클릭 방지 위해 확인 후 진행(원본은 비파괴).
+  function doFork(id: string): void {
+    if (confirm('이 질문에서 새 분기 대화를 만들까요?\n원본 대화는 그대로 유지되고, 새 분기로 이동합니다.')) {
+      onfork(id);
+    }
+  }
+
   // 도구 인자 미리보기 — 값들을 짧게 요약(예: {query:'거실'} → "거실"). O(인자수).
   function argsPreview(args: unknown): string {
     if (!args || typeof args !== 'object') return '';
@@ -48,7 +55,7 @@
         <!-- 분기: 백엔드 message id 가 있는(이력 로드된) 사용자 메시지에서만 -->
         {#if it.role === 'user' && it.backendId}
           {@const bid = it.backendId}
-          <button class="fork" title="여기서 분기" aria-label="여기서 분기" onclick={() => onfork(bid)}>⑂</button>
+          <button class="fork" title="여기서 분기 — 이 질문부터 새 대화로 갈라냄(원본 유지)" aria-label="여기서 분기" onclick={() => doFork(bid)}>⑂ 분기</button>
         {/if}
       </div>
     {/if}

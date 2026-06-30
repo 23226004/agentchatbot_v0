@@ -96,6 +96,18 @@ class ConversationRepository:
             )
             return cur.rowcount > 0
 
+    def set_thread_title_if_empty(self, thread_id: str, title: str) -> bool:
+        """제목이 **아직 없을 때만** 설정(첫 질문 자동제목·분기 제목). `WHERE title IS NULL` 이라 최초 1회만
+        적용되고, 수동 rename·이후 메시지·재호출은 덮어쓰지 않는다. 설정했으면 True."""
+        try:
+            uuid.UUID(str(thread_id))
+        except ValueError:
+            return False
+        with self.pool.connection() as conn:
+            cur = conn.execute(
+                "UPDATE threads SET title = %s WHERE id = %s AND title IS NULL", (title, thread_id))
+            return cur.rowcount > 0
+
     def has_running_run(self, thread_id: str) -> bool:
         """thread 에 **실행 중**(running) run 이 있나 — 삭제 가드용. awaiting_approval/interrupted(일시정지)는
         제외(삭제로 취소 허용). running 은 pump 가 활성 writer 라 삭제 시 경쟁 → 차단(409)."""

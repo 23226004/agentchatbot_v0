@@ -313,6 +313,14 @@
     if (busy || awaiting || summaryBusy) return; // 요약 중 전송 차단(status race, 교차검증 A2)
     answered = false;
     transcript.addUser(text);
+    // 첫 질문이면 대화명 즉시 반영(백엔드 set_*_if_empty 와 정합: 첫 비어있지않은 줄·코드포인트 60자·title==null).
+    const curThread = client.currentThread();
+    const firstLine = text.split('\n').map((l) => l.trim()).find((l) => l) ?? '';
+    if (curThread && firstLine) {
+      const th = threads.threads.find((x) => x.id === curThread);
+      // title==null 만(빈문자는 백엔드 IS NULL 이 안 덮으므로 FE 도 동일). 코드포인트 슬라이스(이모지 분할 방지).
+      if (th && th.title == null) threads.rename(curThread, [...firstLine].slice(0, 60).join(''));
+    }
     plan.reset();
     planAnalyzeId = plan.add('질문 이해', 'active');
     planToolIds = new Map();

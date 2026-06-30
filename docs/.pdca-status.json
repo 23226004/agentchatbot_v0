@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-06-30T07:50:41.146Z",
+  "lastUpdated": "2026-06-30T11:41:58.121Z",
   "activeFeatures": [
     "db-layer",
     "conversation-store",
@@ -196,9 +196,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-24T08:28:14.397Z",
-        "lastUpdated": "2026-06-30T03:26:27.429Z"
+        "lastUpdated": "2026-06-30T11:41:58.120Z"
       },
-      "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/backend/tests/test_thread_admin.py"
+      "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/backend/tests/test_run_service.py"
     },
     "legal_infra": {
       "phase": "do",
@@ -287,7 +287,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-25T01:34:32.504Z",
-        "lastUpdated": "2026-06-30T00:46:29.384Z"
+        "lastUpdated": "2026-06-30T08:54:07.218Z"
       },
       "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/backend/src/backend_app/services/run_service.py"
     },
@@ -313,7 +313,7 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-25T02:24:45.268Z",
-        "lastUpdated": "2026-06-30T00:48:44.746Z"
+        "lastUpdated": "2026-06-30T08:43:59.313Z"
       },
       "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/backend/src/backend_app/repositories/conversation.py"
     },
@@ -443,9 +443,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-06-29T04:55:29.601Z",
-        "lastUpdated": "2026-06-30T07:50:41.146Z"
+        "lastUpdated": "2026-06-30T08:40:40.419Z"
       },
-      "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/frontend/src/lib/widgets/Composer.svelte"
+      "lastFile": "/Users/sungjoonyi/Claude/Projects/2026_06_20_Agent/frontend/src/lib/widgets/ConversationView.svelte"
     },
     "do33B": {
       "phase": "do",
@@ -495,7 +495,7 @@
   "session": {
     "startedAt": "2026-06-24T01:28:19.047Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-06-30T07:50:41.146Z"
+    "lastActivity": "2026-06-30T11:41:58.121Z"
   },
   "history": [
     {
@@ -5733,6 +5733,54 @@
     {
       "timestamp": "2026-06-30T07:50:41.146Z",
       "feature": "widgets",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-30T08:40:31.378Z",
+      "feature": "widgets",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-30T08:40:40.419Z",
+      "feature": "widgets",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-30T08:43:59.313Z",
+      "feature": "repositories",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-30T08:52:03.221Z",
+      "feature": "run_service.py",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-30T08:53:56.411Z",
+      "feature": "run_service.py",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-30T08:54:07.218Z",
+      "feature": "run_service.py",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-30T08:55:09.956Z",
+      "feature": "tests",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-06-30T11:41:58.121Z",
+      "feature": "tests",
       "phase": "do",
       "action": "updated"
     }

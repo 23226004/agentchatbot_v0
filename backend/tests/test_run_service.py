@@ -89,6 +89,15 @@ class FakeRepo:
                               "citation_ids": list(citation_ids or [])})
         return mid, seq
 
+    def set_thread_title_if_empty(self, thread_id, title):
+        # 첫 질문 자동제목(WHERE title IS NULL 모사) — run 거동 테스트라 추적만, IS NULL 의미만 호환.
+        if not hasattr(self, "titles"):
+            self.titles = {}
+        if self.titles.get(thread_id) is None:
+            self.titles[thread_id] = title
+            return True
+        return False
+
     def set_tool_result(self, run_id, tool_call_id, tool_result):
         for m in self.messages:
             if m.get("run_id") == run_id and m.get("tool_call_id") == tool_call_id:
