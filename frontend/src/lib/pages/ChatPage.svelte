@@ -87,6 +87,7 @@
   let isNarrow = $state(false); // ≤760(드로어 모드) — inert/aria/포커스 토글 기준
   let hamburgerEl = $state<HTMLButtonElement | null>(null); // 닫힘 시 포커스 복귀 대상(R8)
   function openNav(): void {
+    if (awaiting) return; // 승인 대기 중엔 드로어를 열지 않음(승인 게이트 우선, M4-D1 방어)
     pushState('', { navDrawer: true }); // history 항목 추가 → 뒤로가기 1번이 닫음(R13)
   }
   function closeNav(): void {
@@ -349,6 +350,9 @@
             answered = true; // 답변 도착 — 인디케이터 숨김
             break;
           case 'approval.requested':
+            // 드로어가 열린 채 승인이 오면 .center 가 inert → 그 안의 ApprovalBar 버튼까지 inert 되어
+            // 승인/거절 불가 교착(교차검증 M4-D1). 승인 게이트가 항상 조작 가능하도록 드로어 강제 닫기.
+            if (navOpen) closeNav();
             awaiting = { detail: ev.detail ?? '도구 실행 승인이 필요합니다.', tools: ev.tools ?? [] };
             status = '승인 대기…';
             break;
@@ -419,7 +423,7 @@
 </script>
 
 <div class="shell" style={agents.active.accent ? `--accent:${agents.active.accent}` : ''}>
-  <header inert={navOpen || undefined}>
+  <header inert={navOpen || (!!awaiting && isNarrow) || undefined}>
     <button
       class="hamburger"
       bind:this={hamburgerEl}
@@ -463,7 +467,8 @@
          레일·태스크는 모바일서 display:none 이라 이미 비포커스. -->
     <section class="center" inert={navOpen || undefined}>
       {#if showSummary && summaries.length}
-        <div class="summary-panel">
+        <!-- 승인 시트(모바일 모달) 동안 요약 패널도 inert — sp-close 가 scrim 뒤로 새지 않게(M4-D2). -->
+        <div class="summary-panel" inert={(!!awaiting && isNarrow) || undefined}>
           <div class="sp-head">
             <span>대화 요약</span>
             <button class="sp-close" onclick={() => (showSummary = false)} aria-label="닫기">✕</button>
@@ -473,7 +478,8 @@
           {/each}
         </div>
       {/if}
-      <main bind:this={scroller}>
+      <!-- 승인 시트(모바일 모달) 동안 본문 inert — 포커스가 scrim 뒤 대화/칩으로 새지 않게(M4). -->
+      <main bind:this={scroller} inert={(!!awaiting && isNarrow) || undefined}>
         <ConversationView items={transcript.items} citations={citations.items} onfork={forkThreadHandler} />
         {#if busy && !awaiting && !answered}
           <div class="thinking" aria-live="polite">
@@ -487,6 +493,7 @@
         <ApprovalBar
           detail={awaiting.detail}
           tools={awaiting.tools}
+          sheet={isNarrow}
           onApprove={(approved) => decide(true, approved)}
           onReject={() => decide(false)}
         />
