@@ -269,6 +269,9 @@ def _register_routes(app: FastAPI) -> None:
         repo = _repo(req)
         if repo.has_running_run(thread_id):
             raise HTTPException(409, "실행 중인 대화는 삭제할 수 없습니다. 완료 후 다시 시도하세요.")
+        # fork 후손 보호(교차검증 A1): 참조모델이라 부모 삭제 시 자식 history 가 소실된다 → 분기 먼저 삭제.
+        if repo.has_fork_children(thread_id):
+            raise HTTPException(409, "이 대화에서 분기된 대화가 있어 삭제할 수 없습니다. 분기를 먼저 삭제하세요.")
         if not repo.delete_thread(thread_id):
             raise HTTPException(404, "thread 없음")
         return {"deleted": True}

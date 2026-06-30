@@ -211,6 +211,7 @@ class RunService:
         if not self.repo.try_transition(run_id, "awaiting_approval", "interrupted", ended=True):
             return False
         self.repo.set_pending_approval(run_id, "rejected")
+        self.repo.resolve_orphan_tool_cells(run_id, _INTERRUPTED_TOOL)  # 미결 도구셀 tool_result NULL→마커(교차검증 A2)
         self._clear_rejected_graph(thread_id)
         return True
 
@@ -266,6 +267,7 @@ class RunService:
             if not self.repo.try_transition(run_id, "awaiting_approval", "rejected", ended=True):
                 raise ValueError("이미 처리된 승인입니다")  # 동시 resume 패자
             self.repo.set_pending_approval(run_id, "rejected")
+            self.repo.resolve_orphan_tool_cells(run_id, _REJECTED_TOOL)  # 미결 도구셀 tool_result NULL→마커(교차검증 A2)
             self._clear_rejected_graph(thread_id)   # 체크포인트 정합화(stale interrupt 방지)
             yield self._emit("run.done", {"run_id": run_id, "status": "rejected"}, thread_id)
             return

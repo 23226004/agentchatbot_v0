@@ -96,6 +96,9 @@ class RunManager:
                 # 내구 이벤트로그 GC(저빈도): 종결 오래된 run 의 이벤트 정리(무한누적 방지).
                 if tick % gc_every == 0 and hasattr(repo, "gc_run_events"):
                     repo.gc_run_events(_RUN_EVENTS_RETENTION_S)
+                    # 고아 checkpoint sweep(교차검증 C): 삭제된 thread 의 checkpoint* 회수(FK 부재 누수).
+                    if hasattr(repo, "gc_orphan_checkpoints"):
+                        repo.gc_orphan_checkpoints()
             except Exception:  # noqa: BLE001 — 유지보수 루프는 일시적 DB 오류에 죽지 않는다(continue)
                 # **G6**: 그러나 무로깅이면 heartbeat/reconcile/GC 정지(→ 살아있는 run 오살·이벤트 무한증식)가
                 # 영영 불가시였다. 진짜 예외를 로깅하고 루프는 계속(다음 틱 재시도).

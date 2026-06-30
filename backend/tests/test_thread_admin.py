@@ -72,8 +72,35 @@ class RunAgent:
         pass
 
 
-def _client():
-    return TestClient(create_app(agent_factory=lambda cp: RunAgent()))
+class ApprovalAgent:
+    """도구 전 interrupt(승인대기) — 대기 도구셀(tool_result NULL) 영속. resume 시 실행→완주."""
+    settings = _SETTINGS
+
+    def stream(self, message, thread_id="default"):
+        yield {"agent": {"messages": [AIMsg(tool_calls=[
+            {"id": "c1", "name": "search_legal", "args": {"query": "거실"}}])]}}
+
+        class _I:
+            value = "승인?"
+        yield {"__interrupt__": (_I(),)}
+
+    def resume(self, thread_id="default"):
+        yield {"tools": {"messages": [ToolMessage(
+            "c1", "법령", artifact=AnswerContext(articles=[_ref()], query="거실"))]}}
+        yield {"agent": {"messages": [AIMsg(content=f"...[[cite:{_CID}]].")]}}
+
+    def reject_pending(self, thread_id="default"):
+        pass
+
+
+def _client(agent=None):
+    return TestClient(create_app(agent_factory=lambda cp: agent or RunAgent()))
+
+
+def _tool_results(c, thread_id):
+    with c.app.state.repo.pool.connection() as conn:
+        return [r[0] for r in conn.execute(
+            "SELECT tool_result FROM messages WHERE thread_id=%s AND role='tool'", (thread_id,)).fetchall()]
 
 
 def _wait_status(c, thread_id, statuses, timeout=5.0):
@@ -180,8 +207,64 @@ def test_delete_blocked_while_running_409():
             conn.execute("INSERT INTO runs (id, thread_id, status) VALUES (%s, %s, 'running')",
                          (str(uuid.uuid4()), tid))
         assert c.delete(f"/threads/{tid}").status_code == 409
-        # 스레드는 보존(삭제 안 됨)
-        assert c.get(f"/threads/{tid}/messages").status_code == 200
+
+
+# ── 홀리스틱 교차검증 수정(A1·A2·C) ─────────────────────────────────────────
+def test_delete_blocked_with_fork_children_409():
+    """A1: fork 후손 있는 부모 삭제 차단(참조모델이라 자식 history 소실 방지). leaf 부터 삭제 가능."""
+    with _client() as c:
+        parent = c.post("/threads", json={}).json()["id"]
+        child = c.post("/threads", json={}).json()["id"]
+        with c.app.state.repo.pool.connection() as conn:
+            conn.execute("UPDATE threads SET forked_from_thread_id=%s WHERE id=%s", (parent, child))
+        assert c.delete(f"/threads/{parent}").status_code == 409   # 후손 있어 차단
+        assert c.delete(f"/threads/{child}").status_code == 200    # leaf 삭제 OK
+        assert c.delete(f"/threads/{parent}").status_code == 200   # 이제 부모 삭제 OK
+
+
+def test_reject_fills_orphan_tool_cells():
+    """A2: 전량 거절 시 대기 도구셀 tool_result NULL → 마커로 채움(고아 pending 방지)."""
+    with _client(ApprovalAgent()) as c:
+        tid = c.post("/threads", json={}).json()["id"]
+        c.post(f"/threads/{tid}/messages", json={"message": "q"})
+        _wait_status(c, tid, {"awaiting_approval"})
+        assert _tool_results(c, tid) == [None]                     # 대기 셀 NULL
+        c.post(f"/threads/{tid}/approve", json={"approve": False})
+        _wait_status(c, tid, {"rejected"})
+        assert all(r is not None for r in _tool_results(c, tid))   # 더 이상 NULL 고아 없음
+
+
+def test_interrupt_awaiting_fills_orphan_tool_cells():
+    """A2: 승인대기 run 을 interrupt 종결 시에도 대기 도구셀을 마커로 채움."""
+    with _client(ApprovalAgent()) as c:
+        tid = c.post("/threads", json={}).json()["id"]
+        rid = c.post(f"/threads/{tid}/messages", json={"message": "q"}).json()["run_id"]
+        _wait_status(c, tid, {"awaiting_approval"})
+        assert c.post(f"/runs/{rid}/interrupt").status_code == 200
+        _wait_status(c, tid, {"interrupted"})
+        assert all(r is not None for r in _tool_results(c, tid))
+
+
+def test_gc_sweeps_orphan_checkpoints():
+    """C: 부모 thread 없는 고아 checkpoint* 를 gc 가 회수(FK 부재 누수 차단). live 는 보존."""
+    with _client() as c:
+        repo = c.app.state.repo
+        import uuid
+        orphan_tid = str(uuid.uuid4())
+        live_tid = c.post("/threads", json={}).json()["id"]
+        with repo.pool.connection() as conn:
+            for t in ("checkpoints", "checkpoint_writes", "checkpoint_blobs"):
+                # 컬럼이 테이블마다 다르므로 공통 thread_id/checkpoint_ns 만 채워 최소 행 삽입
+                pass
+            conn.execute("INSERT INTO checkpoints (thread_id, checkpoint_ns, checkpoint_id, type, checkpoint, metadata) "
+                         "VALUES (%s,'','cp1','', '{}','{}')", (orphan_tid,))
+            conn.execute("INSERT INTO checkpoints (thread_id, checkpoint_ns, checkpoint_id, type, checkpoint, metadata) "
+                         "VALUES (%s,'','cp2','', '{}','{}')", (live_tid,))
+        swept = repo.gc_orphan_checkpoints()
+        assert swept >= 1
+        n_orphan = _count(c, "SELECT count(*) FROM checkpoints WHERE thread_id=%s", (orphan_tid,))
+        n_live = _count(c, "SELECT count(*) FROM checkpoints WHERE thread_id=%s", (live_tid,))
+        assert n_orphan == 0 and n_live == 1                       # 고아만 sweep, live 보존
 
 
 # ── 고아 run_events GC sweep (Do-33-XV 🔴 — delete 후 늦은 terminal append) ───

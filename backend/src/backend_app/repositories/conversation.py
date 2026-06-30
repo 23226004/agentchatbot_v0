@@ -110,6 +110,20 @@ class ConversationRepository:
             ).fetchone()
             return row is not None
 
+    def has_fork_children(self, thread_id: str) -> bool:
+        """이 thread 를 분기원으로 둔 자식 thread 가 있나 — 삭제 가드용. fork 는 참조모델(메시지 미복사)이라
+        부모를 지우면 자식의 history prefix 가 재구성 불가(조용히 소실)·fork_point dangling 된다(교차검증 A1).
+        → 후손 있으면 삭제 차단(409). 사용자는 분기를 leaf 부터 지워야 한다."""
+        try:
+            uuid.UUID(str(thread_id))
+        except ValueError:
+            return False
+        with self.pool.connection() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM threads WHERE forked_from_thread_id = %s LIMIT 1", (thread_id,)
+            ).fetchone()
+            return row is not None
+
     def delete_thread(self, thread_id: str) -> bool:
         """대화 삭제 — 자식 전부 + LangGraph checkpoint* 를 **단일 트랜잭션**으로 cascade 삭제(FK 순서 준수).
         존재했으면 True, 아니면 False(404). **global citations 는 보존**(불변 법령 스냅샷·타 thread 공유);
@@ -522,6 +536,21 @@ class ConversationRepository:
                 (retention_seconds,),
             )
             return deleted + orphan.rowcount
+
+    def gc_orphan_checkpoints(self) -> int:
+        """부모 thread 가 삭제된 고아 LangGraph checkpoint* 행 정리(교차검증 C-F-C1). checkpoint* 4테이블은
+        threads 에 **FK 가 없어**(LangGraph 소유) delete_thread 커밋 ↔ in-flight put 의 TOCTOU 창에 착지한
+        write 가 영구 고아로 **단조 누적**된다(run_events 는 고아 sweep 으로 회수되나 checkpoint 는 비대칭으로
+        방치됐음). thread_id(TEXT) 가 어떤 threads.id 와도 안 맞으면 고아(우리 흐름상 thread 는 늘 checkpoint
+        보다 먼저 생성 → 미매칭=삭제된 thread). 멱등. 반환=삭제 행수."""
+        total = 0
+        with self.pool.connection() as conn:
+            for tbl in ("checkpoint_writes", "checkpoint_blobs", "checkpoints"):
+                cur = conn.execute(
+                    f"DELETE FROM {tbl} c "
+                    "WHERE NOT EXISTS (SELECT 1 FROM threads t WHERE t.id::text = c.thread_id)")
+                total += cur.rowcount
+        return total
 
     def get_pending_tool_calls(self, run_id: str) -> list[dict]:
         """이 run 의 **미실행(승인 대기) 도구호출** — approval.requested 에 실어 FE 가 무엇을 승인하는지
