@@ -78,7 +78,7 @@
     font-size: 11px; background: var(--bg-inset); color: var(--text-soft);
   }
   .row.agent .avatar { background: var(--accent-soft); color: var(--accent); }
-  .bubble { font-size: 14px; line-height: 1.8; padding-top: 2px; min-width: 0; white-space: normal; }
+  .bubble { font-size: 14px; line-height: 1.8; padding-top: 2px; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
   .row.user .bubble { white-space: pre-wrap; }
   .toolrow {
     margin-left: 36px; display: flex; align-items: baseline; gap: 6px;

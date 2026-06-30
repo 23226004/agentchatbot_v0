@@ -53,6 +53,7 @@
         node.classList.remove('clickable');
       }
     }
+    // (표·디스플레이 수식 가로 스크롤 래핑은 markdown.ts 렌더 단계로 이전 — 재렌더 안정, 교차검증 A)
   });
 
   function citeOf(t: EventTarget | null): Citation | undefined {
@@ -88,7 +89,13 @@
 {/if}
 
 <style>
-  .md { font-size: 14px; line-height: 1.8; color: var(--text); }
+  /* 긴 토큰·URL·해시가 버블을 밀어 가로 오버플로하지 않게(반응형 M1) */
+  .md { font-size: 14px; line-height: 1.8; color: var(--text); overflow-wrap: anywhere; }
+  /* 표 가로 스크롤 래퍼 — 내용이 넓으면 이 안에서만 스크롤(본문 폭 보존). 표 하단 마진은 BFC 안에 보존(교차검증 B). */
+  .md :global(.scroll-x) { max-width: 100%; overflow-x: auto; }
+  /* 디스플레이 수식 — span(.katex-display)에 직접 overflow(div 래퍼 없이 → <p> 깨짐 회피, 마진 정상 collapse). */
+  .md :global(.katex-display) { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .md :global(img) { max-width: 100%; height: auto; }
   .md :global(p) { margin: 0 0 10px; }
   .md :global(p:last-child) { margin-bottom: 0; }
   .md :global(h1), .md :global(h2), .md :global(h3) { font-weight: 500; line-height: 1.3; margin: 14px 0 8px; }

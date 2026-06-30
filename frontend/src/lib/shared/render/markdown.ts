@@ -37,16 +37,26 @@ md.inline.ruler.before('escape', 'math', (state, silent) => {
 });
 md.renderer.rules.math = (tokens, idx) => {
   const t = tokens[idx];
+  const display = (t.meta as { display: boolean }).display;
+  let out: string;
   try {
-    return katex.renderToString(t.content, {
-      displayMode: (t.meta as { display: boolean }).display,
+    out = katex.renderToString(t.content, {
+      displayMode: display,
       throwOnError: false, // 잘못된 수식은 빨간 원문으로(렌더 크래시 방지)
       output: 'html' // MathML 제외 → span 트리만 → DOMPurify 통과 단순화
     });
   } catch {
     return md.utils.escapeHtml(t.content);
   }
+  // 디스플레이 수식 가로 오버플로(반응형 M1)는 `.katex-display`(span) 에 **CSS 로 직접** overflow-x 적용
+  // (Markdown.svelte). div 래퍼로 감싸면 인라인 math 토큰이 `<p>` 안이라 블록 div 가 단락을 깨뜨린다(교차검증 A).
+  return out;
 };
+
+// 표를 가로 스크롤 래퍼로 감쌈(반응형 M1) — **렌더 단계**라 {@html} 가 래퍼까지 소유·재렌더 안정
+// (effect 후처리 방식은 스트리밍 재렌더 시 래퍼 파괴·재생성 → 교차검증 A). table 은 블록 토큰이라 `<p>` 밖 → div 적법.
+md.renderer.rules.table_open = () => '<div class="scroll-x"><table>';
+md.renderer.rules.table_close = () => '</table></div>';
 
 // [[cite:ID]] 인라인 규칙
 md.inline.ruler.before('emphasis', 'cite', (state, silent) => {
