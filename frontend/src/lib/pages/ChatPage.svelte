@@ -142,6 +142,13 @@
     };
   });
 
+  // 반응형 M7/P11: 소프트 키보드 보정은 **선언적**으로만(app.html `interactive-widget=resizes-content` + 100dvh).
+  // JS visualViewport(--vvh) 핸들러는 교차검증서 HIGH 결함 확인 → 제거: (D3) `.shell` 이 normal-flow 라 iOS 가
+  // 하단 입력 포커스 시 layout viewport 를 스크롤(offsetTop>0)해 vv.height 만으론 여전히 키보드 뒤로 숨음 →
+  // 올바른 수정은 position:fixed shell 재설계 + 실기 iOS 반복인데 blind 불가. (D5) 키보드 열림 시 autoscroll
+  // 재-핀 부재. (D4) 데스크톱 핀치줌 오탐. → **정밀 iOS 보정은 백로그**(실기 테스트 필요). Android/Chrome 은
+  // interactive-widget 로 layout viewport 가 축소돼 100dvh 가 따라가므로 선언적 처리로 충분.
+
   // 반응형 M5: 모바일 헤더 응축 — 요약·테마·검토는 ⋮ 더보기 메뉴로(모델 칩·mismatch 경고는 상시, R4).
   let moreOpen = $state(false);
   let moreEl = $state<HTMLElement | null>(null);
@@ -655,6 +662,7 @@
 </div>
 
 <style>
+  /* 높이: 100dvh — interactive-widget=resizes-content 로 키보드 시 뷰포트 축소를 따라감(M7/P11 선언적). */
   .shell { display: grid; grid-template-rows: auto 1fr; height: 100vh; height: 100dvh; background: var(--bg); }
   header {
     display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;
@@ -774,7 +782,9 @@
   main { flex: 1; overflow-y: auto; }
 
   @media (max-width: 1040px) {
-    .body { grid-template-columns: 52px 190px minmax(0, 1fr); }
+    /* AgentRail 은 태블릿 이하 숨김(R5/P6 — 에이전트 1종이라 저가치, 새 대화는 ThreadSidebar 에 있음). */
+    .body { grid-template-columns: 190px minmax(0, 1fr); }
+    .body :global(.rail) { display: none; }
     .task-toggle { display: inline-flex; } /* ≤1040: 패널 토글 노출 */
     /* TaskSidebar → 우측 오프캔버스 드로어(M3). position:fixed 라 그리드 트랙 미점유(center 풀폭 유지). */
     .body :global(.task) {
@@ -786,6 +796,10 @@
       padding-right: env(safe-area-inset-right); /* 가로모드 노치 — 우측 드로어는 우측 인셋 직접 적용(M3-C D2) */
     }
     .body.task-open :global(.task) { transform: translateX(0); }
+    /* landscape 노치 대비 가로 safe-area(≤1040): 본문 스크롤 영역과, rail 이 사라져 좌측 가장자리로 온
+       태블릿 static threads 컬럼에 좌/우 인셋. 세로/노치없음이면 env=0 이라 무영향(M7-D1/D2). */
+    main { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+    .body :global(.threads) { padding-left: env(safe-area-inset-left); }
   }
   @media (max-width: 760px) {
     .hamburger { display: inline-flex; }
@@ -796,9 +810,8 @@
     .status { display: none; }
     .ran:not(.mismatch) { display: none; } /* mismatch 경고만 상시 — 일치 시 숨김(R4) */
     .ran.mismatch { max-width: 90px; } /* 좁은 화면서 경고가 우측 버튼들(근거·⋮)을 밀지 않게(M5-C D2/M3-C D3) */
-    /* 본문 한 칸 — 레일 숨김(R5). 태스크/대화목록은 오프캔버스라 그리드 트랙 미점유. */
+    /* 본문 한 칸(레일은 이미 @1040 서 숨김). 태스크/대화목록은 오프캔버스라 그리드 트랙 미점유. */
     .body { grid-template-columns: minmax(0, 1fr); }
-    .body :global(.rail) { display: none; }
     /* ThreadSidebar → 좌측 오프캔버스 드로어(R2/R7). position:fixed 라 그리드 흐름서 빠짐. */
     .body :global(.threads) {
       position: fixed; top: 0; bottom: 0; left: 0; z-index: 50;
@@ -807,6 +820,7 @@
       /* 노치/홈인디케이터 회피 — 드로어는 top:0/bottom:0 라 헤더 safe-area 를 못 받으므로 직접 적용(C-D1). */
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left); /* 가로모드 좌측 노치(M7 landscape) */
     }
     .body.nav-open :global(.threads) { transform: translateX(0); }
   }

@@ -3,7 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="%sveltekit.assets%/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- interactive-widget: 소프트 키보드가 뜨면 뷰포트를 축소시켜 dvh/레이아웃이 따라오게(P11 선언적 보정) -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">
